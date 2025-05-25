@@ -1,1 +1,1 @@
-# AMO Eiendom v48.3.2 – robust og trygg oppstart med tabell/grafer
+# AMO Eiendom v48.2 – Robust versjon med inndata og stabil oppstart
