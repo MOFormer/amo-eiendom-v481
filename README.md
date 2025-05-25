@@ -1,1 +1,1 @@
-# AMO Eiendom med inputpanel og grafer
+# AMO Eiendom v48.2 – Robust versjon med inndata og stabil oppstart
