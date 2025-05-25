@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
-st.title("AMO Eiendom v48.5.5 – Velg, rediger og slett eiendommer")
+st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
 
 # Passordbeskyttelse
 if "access_granted" not in st.session_state:
@@ -18,13 +18,14 @@ if "access_granted" not in st.session_state:
 if "eiendommer" not in st.session_state:
     st.session_state.eiendommer = {}
 
-# Velg eiendom
-valgte_navn = st.sidebar.selectbox("Velg eiendom", ["(Ny eiendom)"] + list(st.session_state.eiendommer.keys()))
-er_ny = valgte_navn == "(Ny eiendom)"
-data = st.session_state.eiendommer.get(valgte_navn, {}) if not er_ny else {}
+# Hent valgt eiendom
+valg_liste = ["(Ny eiendom)"] + list(st.session_state.eiendommer.keys())
+valgt_navn = st.sidebar.selectbox("Velg eiendom", valg_liste)
+er_ny = valgt_navn == "(Ny eiendom)"
+data = st.session_state.eiendommer.get(valgt_navn, {}) if not er_ny else {}
 
-# Inndatafelt – forhåndsfyll hvis valgt eiendom finnes
-navn = st.sidebar.text_input("Navn på eiendom", value=valgte_navn if not er_ny else "")
+# Inndata
+navn = st.sidebar.text_input("Navn på eiendom", value=valgt_navn if not er_ny else "")
 finn_link = st.sidebar.text_input("Finn-lenke", value=data.get("finn", ""))
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=data.get("kjøpesum", 3000000.0), step=100000.0)
 
@@ -59,7 +60,7 @@ lånetype = st.sidebar.selectbox("Lånetype", ["Annuitetslån", "Serielån"], in
 eierform = st.sidebar.radio("Eierform", ["Privat", "AS"], index=["Privat", "AS"].index(data.get("eierform", "Privat")))
 vis_grafer = st.sidebar.checkbox("Vis grafer", value=True)
 
-# Lagre / slett
+# Lagre og slett
 if st.sidebar.button("Lagre endringer"):
     st.session_state.eiendommer[navn] = {
         "finn": finn_link, "kjøpesum": kjøpesum, "leie": leie,
@@ -70,12 +71,14 @@ if st.sidebar.button("Lagre endringer"):
         "forsikring": forsikring, "strøm": strøm, "kommunale": kommunale,
         "internett": internett, "vedlikehold": vedlikehold
     }
-    st.success(f"Eiendom '{navn}' er lagret.")
-
-if not er_ny and st.sidebar.button("Slett eiendom"):
-    st.session_state.eiendommer.pop(valgte_navn, None)
-    st.success(f"Eiendom '{valgte_navn}' er slettet.")
+    st.success(f"Eiendom '{navn}' lagret.")
     st.experimental_rerun()
+
+if not er_ny:
+    if st.sidebar.button("Slett eiendom"):
+        st.session_state.eiendommer.pop(valgt_navn, None)
+        st.success(f"Slettet '{valgt_navn}'.")
+        st.experimental_rerun()
 
 # Beregning
 total = kjøpesum + oppussing + kjøpesum * 0.025
@@ -116,7 +119,7 @@ for m in range(n):
     netto_cf.append(netto)
     akk_cf.append(akk)
 
-# Visning
+# Vis resultater
 st.subheader(f"Resultater for: {navn}")
 if finn_link:
     st.markdown(f"[Se Finn-annonse]({finn_link})", unsafe_allow_html=True)

@@ -1,1 +1,1 @@
-# AMO Eiendom v48.5.5 – forhåndsfylling av eiendom ved valg
+# AMO Eiendom v48.5.6 – fikser menyoppdatering og slett-knapp
