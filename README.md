@@ -1,1 +1,1 @@
-# AMO Eiendom v48.3.6 – trygg sidebar og input
+# AMO Eiendom v48.3.7 – Beregning, yield og visning
