@@ -1,1 +1,1 @@
-# AMO Eiendom v48.1 – trygg versjon for GitHub-opplasting
+# AMO Eiendom med inputpanel og grafer
