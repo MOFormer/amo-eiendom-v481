@@ -1,1 +1,1 @@
-# AMO Eiendom v48.5.4 – Umiddelbar visning + Lagre-knapp for eiendom
+# AMO Eiendom v48.5.5 – forhåndsfylling av eiendom ved valg
