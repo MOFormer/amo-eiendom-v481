@@ -1,1 +1,1 @@
-# AMO Eiendom Boot Test – minimal app for å bekrefte oppstart
+# AMO Eiendom v48.3.6 – trygg sidebar og input
