@@ -1,1 +1,1 @@
-# AMO Eiendom v48.4 – AS vs Privat og flereiendom
+# AMO Eiendom v48.3.9 – med grafer og nedtrekk for oppussing
