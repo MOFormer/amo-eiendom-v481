@@ -1,1 +1,7 @@
-# AMO Eiendom v48.3.2 kommer her – robust og trygg oppstart
+
+import streamlit as st
+
+st.set_page_config(layout="wide")
+st.title("AMO Eiendom Boot Test")
+
+st.success("Appen startet! Alt fungerer så langt.")
