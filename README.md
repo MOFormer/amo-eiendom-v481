@@ -1,1 +1,1 @@
-# AMO Eiendom v48.3.9 – med grafer og nedtrekk for oppussing
+# AMO Eiendom v48.5 – full funksjon med AS/Privat og flere eiendommer
