@@ -1,1 +1,1 @@
-# AMO Eiendom v48.3.8 – cashflow og lån
+# AMO Eiendom v48.3.9 – med grafer og nedtrekk for oppussing
