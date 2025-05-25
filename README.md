@@ -1,1 +1,1 @@
-# AMO Eiendom v48.3 – med kostnadsdetaljer og tabellvisning
+# AMO Eiendom v48.3.2 – robust og trygg oppstart med tabell/grafer
