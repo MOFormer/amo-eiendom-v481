@@ -1,1 +1,1 @@
-# AMO Eiendom v48.5.2 – umiddelbar oppdatering, oppussing + driftskost
+# AMO Eiendom v48.5.3 – legg til eiendom, Finn-lenke, passordbeskyttelse
