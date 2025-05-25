@@ -1,1 +1,1 @@
-# AMO Eiendom v48.5 – full funksjon med AS/Privat og flere eiendommer
+# AMO Eiendom v48.5.2 – umiddelbar oppdatering, oppussing + driftskost
