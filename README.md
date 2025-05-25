@@ -1,1 +1,1 @@
-# AMO Eiendom v48.5.3 – legg til eiendom, Finn-lenke, passordbeskyttelse
+# AMO Eiendom v48.5.4 – Umiddelbar visning + Lagre-knapp for eiendom
