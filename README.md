@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.9 – MixedNumericTypesError løst med eksplisitt typecasting
+# AMO Eiendom v49.2.10 – Advarsler fjernet via float-value for %.0f format
