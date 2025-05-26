@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.7 – Kombinert flagg og blokkering for nullstilling
+# AMO Eiendom v49.2.8 – Stabil nullstilling med kun key-baserte inputs
