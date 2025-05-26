@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2 – Nullstillingsknapper for hvert område
+# AMO Eiendom v49.2.1 – Nullstill uten session_state-konflikt

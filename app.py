@@ -2,7 +2,7 @@
 import streamlit as st
 
 st.set_page_config(layout="wide")
-st.title("AMO Eiendom v49.2 – Nullstillingsknapper for hvert område")
+st.title("AMO Eiendom v49.2.1 – Nullstill uten feil")
 
 # Innlogging
 if "access_granted" not in st.session_state:
@@ -12,7 +12,7 @@ if "access_granted" not in st.session_state:
     st.session_state.access_granted = True
     st.rerun()
 
-# Initialiser session_state
+# Init
 feltgrupper = {
     "kjøpesum": 3000000.0,
     "leie": 22000.0,
@@ -38,13 +38,14 @@ for key, val in feltgrupper.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
-# Nullstillingsfunksjoner
+# Trygg nullstilling
 def nullstill(feltnavn):
     for f in feltnavn:
-        st.session_state[f] = 0.0
+        if f in st.session_state:
+            del st.session_state[f]
     st.rerun()
 
-# Inndata med nullstillingsknapper
+# Inndata med trygge nullstillinger
 with st.sidebar:
     st.subheader("Grunnleggende")
     st.number_input("Kjøpesum", key="kjøpesum", step=100000.0, format="%.0f")
@@ -81,7 +82,7 @@ with st.sidebar:
     if st.button("Nullstill finansiering"):
         nullstill(["lån", "rente", "løpetid", "avdragsfri"])
 
-# Vis verdiene
-st.subheader("Sammendrag (testvisning)")
+# Vis sammendrag
+st.subheader("Sammendrag (test)")
 for key in feltgrupper:
     st.write(f"{key}: {st.session_state[key]}")
