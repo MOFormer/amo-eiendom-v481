@@ -1,1 +1,1 @@
-# AMO Eiendom v48.5.8 – forbedret passordhåndtering med rerun
+# AMO Eiendom v48.5.9 – bytter til st.rerun() for ny Streamlit
