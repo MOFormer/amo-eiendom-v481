@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.6 – Nullstill flagg tilbakestilt i starten
+# AMO Eiendom v49.2.7 – Kombinert flagg og blokkering for nullstilling
