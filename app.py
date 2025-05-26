@@ -2,7 +2,11 @@
 import streamlit as st
 
 st.set_page_config(layout="wide")
-st.title("AMO Eiendom v49.2.5 – Nullstilling med trygg blokkering")
+st.title("AMO Eiendom v49.2.6 – Nullstilling med synlig skjema igjen")
+
+# Nullstillingsflagg – nullstill i starten
+if "nullstill_aktiv" in st.session_state and st.session_state["nullstill_aktiv"]:
+    st.session_state["nullstill_aktiv"] = False
 
 # Innlogging
 if "access_granted" not in st.session_state:
@@ -11,10 +15,6 @@ if "access_granted" not in st.session_state:
         st.stop()
     st.session_state.access_granted = True
     st.rerun()
-
-# Nullstillingsflagg
-if "nullstill_aktiv" not in st.session_state:
-    st.session_state["nullstill_aktiv"] = False
 
 # Standardverdier
 standardverdier = {
@@ -38,6 +38,9 @@ standardverdier = {
     "elektriker": 30000.0,
     "utvendig": 20000.0,
 }
+
+if "nullstill_aktiv" not in st.session_state:
+    st.session_state["nullstill_aktiv"] = False
 
 # Nullstill-funksjon
 def nullstill(feltnavn):
@@ -81,10 +84,7 @@ with st.sidebar:
     if st.button("Nullstill finansiering"):
         nullstill(["lån", "rente", "løpetid", "avdragsfri"])
 
-# Deaktiver nullstillingsflagg etter kjøring
-st.session_state["nullstill_aktiv"] = False
-
-# Vis sammendrag
+# Sammendrag
 st.subheader("Verdier etter input")
 for key in standardverdier:
     st.write(f"{key}: {st.session_state.get(key, 0)}")

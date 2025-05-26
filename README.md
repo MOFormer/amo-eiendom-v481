@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.5 – Nullstilling full blokkering løst
+# AMO Eiendom v49.2.6 – Nullstill flagg tilbakestilt i starten
