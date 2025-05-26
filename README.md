@@ -1,1 +1,1 @@
-# AMO Eiendom v49.1 – viser årlig cashflow inkl. avdrag
+# AMO Eiendom v49.2 – Nullstillingsknapper for hvert område
