@@ -2,7 +2,7 @@
 import streamlit as st
 
 st.set_page_config(layout="wide")
-st.title("AMO Eiendom v49.2.8 – Nullstilling med bare key-styring")
+st.title("AMO Eiendom v49.2.9 – MixedNumericTypesError løst")
 
 # Innlogging
 if "access_granted" not in st.session_state:
@@ -44,29 +44,31 @@ def nullstill(feltnavn):
     for f in feltnavn:
         st.session_state[f] = 0.0
 
-# Inndata med kun key-styring
+# Inndata – bruker eksplisitt typecasting for å unngå feil
 with st.sidebar:
     st.subheader("Grunnleggende")
-    st.number_input("Kjøpesum", value=st.session_state["kjøpesum"], key="kjøpesum", step=100000.0, format="%.0f")
-    st.number_input("Leie/mnd", value=st.session_state["leie"], key="leie", step=1000.0, format="%.0f")
+    st.number_input("Kjøpesum", value=int(st.session_state["kjøpesum"]), key="kjøpesum", step=100000, format="%.0f")
+    st.number_input("Leie/mnd", value=int(st.session_state["leie"]), key="leie", step=1000, format="%.0f")
     if st.button("Nullstill grunnleggende"):
         nullstill(["kjøpesum", "leie"])
 
     st.subheader("Oppussing")
     for felt in ["riving", "bad", "kjøkken", "overflate", "gulv", "rørlegger", "elektriker", "utvendig"]:
-        st.number_input(felt.capitalize(), value=st.session_state[felt], key=felt, step=10000.0, format="%.0f")
+        st.number_input(felt.capitalize(), value=int(st.session_state[felt]), key=felt, step=10000, format="%.0f")
     if st.button("Nullstill oppussing"):
         nullstill(["riving", "bad", "kjøkken", "overflate", "gulv", "rørlegger", "elektriker", "utvendig"])
 
     st.subheader("Driftskostnader")
     for felt in ["forsikring", "strøm", "kommunale", "internett", "vedlikehold"]:
-        st.number_input(felt.capitalize(), value=st.session_state[felt], key=felt, step=1000.0, format="%.0f")
+        st.number_input(felt.capitalize(), value=int(st.session_state[felt]), key=felt, step=1000, format="%.0f")
     if st.button("Nullstill driftskostnader"):
         nullstill(["forsikring", "strøm", "kommunale", "internett", "vedlikehold"])
 
     st.subheader("Lån og rente")
-    for felt in ["lån", "rente", "løpetid", "avdragsfri"]:
-        st.number_input(felt.capitalize(), value=st.session_state[felt], key=felt, step=1.0 if felt=="rente" else 1, format="%.2f" if felt=="rente" else "%.0f")
+    st.number_input("Lån", value=int(st.session_state["lån"]), key="lån", step=100000, format="%.0f")
+    st.number_input("Rente", value=float(st.session_state["rente"]), key="rente", step=0.1, format="%.2f")
+    st.number_input("Løpetid", value=int(st.session_state["løpetid"]), key="løpetid", step=1, format="%.0f")
+    st.number_input("Avdragsfri", value=int(st.session_state["avdragsfri"]), key="avdragsfri", step=1, format="%.0f")
     if st.button("Nullstill finansiering"):
         nullstill(["lån", "rente", "løpetid", "avdragsfri"])
 

@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.8 – Stabil nullstilling med kun key-baserte inputs
+# AMO Eiendom v49.2.9 – MixedNumericTypesError løst med eksplisitt typecasting
