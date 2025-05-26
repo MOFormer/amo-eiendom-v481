@@ -2,7 +2,7 @@
 import streamlit as st
 
 st.set_page_config(layout="wide")
-st.title("AMO Eiendom v49.2.1 – Nullstill uten feil")
+st.title("AMO Eiendom v49.2.2 – Nullstill med visningsoppdatering")
 
 # Innlogging
 if "access_granted" not in st.session_state:
@@ -12,7 +12,7 @@ if "access_granted" not in st.session_state:
     st.session_state.access_granted = True
     st.rerun()
 
-# Init
+# Feltgrupper
 feltgrupper = {
     "kjøpesum": 3000000.0,
     "leie": 22000.0,
@@ -38,51 +38,51 @@ for key, val in feltgrupper.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
-# Trygg nullstilling
+# Nullstilling
 def nullstill(feltnavn):
     for f in feltnavn:
         if f in st.session_state:
             del st.session_state[f]
     st.rerun()
 
-# Inndata med trygge nullstillinger
+# Inndata med oppdatert visning
 with st.sidebar:
     st.subheader("Grunnleggende")
-    st.number_input("Kjøpesum", key="kjøpesum", step=100000.0, format="%.0f")
-    st.number_input("Leie/mnd", key="leie", step=1000.0, format="%.0f")
+    st.number_input("Kjøpesum", key="kjøpesum", value=st.session_state.get("kjøpesum", 0.0), step=100000.0, format="%.0f")
+    st.number_input("Leie/mnd", key="leie", value=st.session_state.get("leie", 0.0), step=1000.0, format="%.0f")
     if st.button("Nullstill grunnleggende"):
         nullstill(["kjøpesum", "leie"])
 
     st.subheader("Oppussing")
-    st.number_input("Utrydding/riving", key="riving")
-    st.number_input("Bad", key="bad")
-    st.number_input("Kjøkken", key="kjøkken")
-    st.number_input("Overflate", key="overflate")
-    st.number_input("Gulv/dører/lister", key="gulv")
-    st.number_input("Rørlegger", key="rørlegger")
-    st.number_input("Elektriker", key="elektriker")
-    st.number_input("Utvendig", key="utvendig")
+    st.number_input("Utrydding/riving", key="riving", value=st.session_state.get("riving", 0.0))
+    st.number_input("Bad", key="bad", value=st.session_state.get("bad", 0.0))
+    st.number_input("Kjøkken", key="kjøkken", value=st.session_state.get("kjøkken", 0.0))
+    st.number_input("Overflate", key="overflate", value=st.session_state.get("overflate", 0.0))
+    st.number_input("Gulv/dører/lister", key="gulv", value=st.session_state.get("gulv", 0.0))
+    st.number_input("Rørlegger", key="rørlegger", value=st.session_state.get("rørlegger", 0.0))
+    st.number_input("Elektriker", key="elektriker", value=st.session_state.get("elektriker", 0.0))
+    st.number_input("Utvendig", key="utvendig", value=st.session_state.get("utvendig", 0.0))
     if st.button("Nullstill oppussing"):
         nullstill(["riving", "bad", "kjøkken", "overflate", "gulv", "rørlegger", "elektriker", "utvendig"])
 
     st.subheader("Driftskostnader")
-    st.number_input("Forsikring", key="forsikring")
-    st.number_input("Strøm", key="strøm")
-    st.number_input("Kommunale avgifter", key="kommunale")
-    st.number_input("Internett", key="internett")
-    st.number_input("Vedlikehold", key="vedlikehold")
+    st.number_input("Forsikring", key="forsikring", value=st.session_state.get("forsikring", 0.0))
+    st.number_input("Strøm", key="strøm", value=st.session_state.get("strøm", 0.0))
+    st.number_input("Kommunale avgifter", key="kommunale", value=st.session_state.get("kommunale", 0.0))
+    st.number_input("Internett", key="internett", value=st.session_state.get("internett", 0.0))
+    st.number_input("Vedlikehold", key="vedlikehold", value=st.session_state.get("vedlikehold", 0.0))
     if st.button("Nullstill driftskostnader"):
         nullstill(["forsikring", "strøm", "kommunale", "internett", "vedlikehold"])
 
     st.subheader("Lån og rente")
-    st.number_input("Lånebeløp", key="lån", step=100000.0, format="%.0f")
-    st.number_input("Rente (%)", key="rente")
-    st.number_input("Løpetid (år)", key="løpetid")
-    st.number_input("Avdragsfri (år)", key="avdragsfri")
+    st.number_input("Lånebeløp", key="lån", value=st.session_state.get("lån", 0.0), step=100000.0, format="%.0f")
+    st.number_input("Rente (%)", key="rente", value=st.session_state.get("rente", 0.0))
+    st.number_input("Løpetid (år)", key="løpetid", value=st.session_state.get("løpetid", 0.0))
+    st.number_input("Avdragsfri (år)", key="avdragsfri", value=st.session_state.get("avdragsfri", 0.0))
     if st.button("Nullstill finansiering"):
         nullstill(["lån", "rente", "løpetid", "avdragsfri"])
 
-# Vis sammendrag
-st.subheader("Sammendrag (test)")
+# Testvisning
+st.subheader("Sammendrag")
 for key in feltgrupper:
-    st.write(f"{key}: {st.session_state[key]}")
+    st.write(f"{key}: {st.session_state.get(key, 0)}")

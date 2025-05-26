@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.1 – Nullstill uten session_state-konflikt
+# AMO Eiendom v49.2.2 – Nullstill med riktig visningsoppdatering
