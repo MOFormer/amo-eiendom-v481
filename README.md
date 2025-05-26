@@ -1,1 +1,1 @@
-# AMO Eiendom v48.5.9 – bytter til st.rerun() for ny Streamlit
+# AMO Eiendom v49.0 – full funksjonalitet med stabil innlogging
