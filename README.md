@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.4 – Nullstilling uten sistefelt-feil
+# AMO Eiendom v49.2.5 – Nullstilling full blokkering løst
