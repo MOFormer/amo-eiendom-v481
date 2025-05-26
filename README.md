@@ -1,1 +1,1 @@
-# AMO Eiendom v48.5.7 – stabil passordbeskyttelse
+# AMO Eiendom v48.5.8 – forbedret passordhåndtering med rerun
