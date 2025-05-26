@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.3 – Nullstill med eksplisitt session_state-håndtering
+# AMO Eiendom v49.2.4 – Nullstilling uten sistefelt-feil
