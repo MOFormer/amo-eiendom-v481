@@ -4,11 +4,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
-st.title("AMO Eiendom v49.0 – Komplett app med innlogging og eiendomsanalyse")
+st.title("AMO Eiendom v49.1 – Nå med årlig total cashflow (inkl. avdrag)")
 
-# Stabil passordbeskyttelse
+# Passordbeskyttelse
 if "access_granted" not in st.session_state:
-    pwd = st.text_input("Skriv inn passord for tilgang", type="password")
+    pwd = st.text_input("Skriv inn passord", type="password")
     if pwd != "amo123":
         st.stop()
     st.session_state.access_granted = True
@@ -90,7 +90,7 @@ else:
     terminbeløp = lån / (n - af) if (n - af) > 0 else 0
 
 saldo = lån
-restgjeld, avdrag, renter_liste, netto_cf, akk_cf = [], [], [], [], []
+restgjeld, avdrag, renter_liste, netto_cf, akk_cf, total_cf = [], [], [], [], [], []
 akk = 0
 
 for m in range(n):
@@ -115,7 +115,11 @@ for m in range(n):
     avdrag.append(avdrag_mnd)
     renter_liste.append(rente_mnd)
     netto_cf.append(netto)
+    total_cf.append(netto + avdrag_mnd)
     akk_cf.append(akk)
+
+# Årlig total cashflow inkl. avdrag
+årlig_total_cf = sum(total_cf[:12])
 
 # Vis resultater
 st.subheader(f"Resultater for: {navn}")
@@ -124,6 +128,7 @@ if finn_link:
 st.metric("Total investering", f"{int(total):,} kr")
 st.metric("Brutto yield", f"{(leie * 12 / total) * 100:.2f} %")
 st.metric("Netto yield", f"{((leie * 12 - drift) / total) * 100:.2f} %")
+st.metric("Årlig cashflow inkl. avdrag", f"{int(årlig_total_cf):,} kr")
 
 df = pd.DataFrame({
     "Måned": list(range(1, n + 1)),
@@ -131,11 +136,12 @@ df = pd.DataFrame({
     "Avdrag": avdrag,
     "Renter": renter_liste,
     "Netto cashflow": netto_cf,
+    "Kapitalvekst (Netto + Avdrag)": total_cf,
     "Akk. cashflow": akk_cf
 })
 st.dataframe(df.head(60))
 
 if vis_grafer:
-    st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
+    st.line_chart(df[["Kapitalvekst (Netto + Avdrag)", "Akk. cashflow"]])
     st.line_chart(df[["Renter", "Avdrag"]])
     st.line_chart(df["Restgjeld"])

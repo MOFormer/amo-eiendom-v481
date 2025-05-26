@@ -1,1 +1,1 @@
-# AMO Eiendom v49.0 – full funksjonalitet med stabil innlogging
+# AMO Eiendom v49.1 – viser årlig cashflow inkl. avdrag
