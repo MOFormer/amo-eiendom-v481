@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.16 – Automatisk lagring og 'Ny eiendom'-knapp
+# AMO Eiendom v48.5.6 – fikser menyoppdatering og slett-knapp
