@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.17 – Forbedret eiendomsvalg og slett-knapp øverst
+# AMO Eiendom v49.2.18 – Automatisk eiendomslasting uten knapp

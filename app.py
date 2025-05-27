@@ -14,7 +14,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("AMO Eiendom v49.2.17 – Raskt eiendomsvalg og sletting")
+st.title("AMO Eiendom v49.2.18 – Automatisk eiendomslasting")
 
 # Innlogging
 if "access_granted" not in st.session_state:
@@ -37,6 +37,7 @@ for k, v in felt_navn.items():
 st.session_state.setdefault("eiendommer", {})
 st.session_state.setdefault("valgt_eiendom", "")
 st.session_state.setdefault("ny_klikket", False)
+st.session_state.setdefault("forrige_valgt", "")
 
 # === Funksjoner ===
 def lagre_aktiv_eiendom():
@@ -56,13 +57,6 @@ def ny_eiendom():
     lagre_aktiv_eiendom()
     st.session_state["ny_klikket"] = True
 
-def last_eiendom(navn):
-    if navn in st.session_state.eiendommer:
-        for k, v in st.session_state.eiendommer[navn].items():
-            st.session_state[k] = v
-        st.session_state["valgt_eiendom"] = navn
-        st.rerun()
-
 def slett_eiendom():
     navn = st.session_state["valgt_eiendom"]
     if navn in st.session_state.eiendommer:
@@ -72,6 +66,8 @@ def slett_eiendom():
 
 # Automatisk lagring
 lagre_aktiv_eiendom()
+
+# Nullstill etter "ny eiendom"
 if st.session_state["ny_klikket"]:
     nullstill_alle()
 
@@ -80,7 +76,14 @@ with st.sidebar:
     st.markdown("## Velg eiendom")
     if st.session_state.eiendommer:
         valgt = st.selectbox("Eiendommer", list(st.session_state.eiendommer.keys()), key="valgt_eiendom_drop")
-        st.button("Last valgt eiendom", on_click=last_eiendom, args=(valgt,))
+        # Automatisk oppdater state hvis valgt eiendom er ny
+        if valgt != st.session_state["forrige_valgt"]:
+            data = st.session_state.eiendommer[valgt]
+            for k, v in data.items():
+                st.session_state[k] = v
+            st.session_state["valgt_eiendom"] = valgt
+            st.session_state["forrige_valgt"] = valgt
+
         st.button("Slett valgt eiendom", on_click=slett_eiendom)
 
     st.markdown("---")
