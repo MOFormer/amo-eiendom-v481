@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.18 – Automatisk eiendomslasting uten knapp
+# AMO Eiendom v49.2.19 – Komplett versjon med grafer, lånevalg og cashflow
