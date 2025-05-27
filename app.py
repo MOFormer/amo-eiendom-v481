@@ -2,9 +2,21 @@
 import streamlit as st
 
 st.set_page_config(layout="wide")
-st.title("AMO Eiendom v49.2.14 – Nullstilling og eiendomsvalg samlet")
+st.markdown("""
+    <style>
+    ::-webkit-scrollbar {
+        width: 12px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 6px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# === Innlogging ===
+st.title("AMO Eiendom v49.2.15 – Bedre lagring og scrollbar")
+
+# Innlogging
 if "access_granted" not in st.session_state:
     pwd = st.text_input("Passord", type="password")
     if pwd != "amo123":
@@ -12,7 +24,7 @@ if "access_granted" not in st.session_state:
     st.session_state.access_granted = True
     st.rerun()
 
-# === Felter og kategorier ===
+# Feltstruktur og nullstillingskategorier
 felt_navn = {
     "kjøpesum": 3000000.0,
     "leie": 22000.0,
@@ -44,25 +56,31 @@ nullstillingsfelter = {
 }
 st.session_state.setdefault("nullstilt_felter", [])
 
-# === Init state ===
+# Init state
 for k, v in felt_navn.items():
     st.session_state.setdefault(k, v)
 st.session_state.setdefault("eiendommer", {})
 st.session_state.setdefault("valgt_eiendom", "")
+st.session_state.setdefault("lagret_sist", "")
 
-# === Nullstilling etter flagg ===
+# Nullstilling etter rerun
 for f in st.session_state["nullstilt_felter"]:
     st.session_state[f] = 0.0
 st.session_state["nullstilt_felter"] = []
 
-# === Funksjoner ===
+# Funksjoner
+def nullstill(kategori):
+    st.session_state["nullstilt_felter"] = nullstillingsfelter[kategori]
+    st.rerun()
+
 def lagre_eiendom():
-    navn = st.session_state["eiendomsnavn"]
+    navn = st.session_state["eiendomsnavn"].strip()
     if navn:
         st.session_state.eiendommer[navn] = {k: st.session_state[k] for k in felt_navn}
         st.session_state.valgt_eiendom = navn
-        st.success(f"Eiendom '{navn}' lagret.")
-        st.rerun()
+        st.session_state.lagret_sist = navn
+    else:
+        st.warning("Du må skrive inn navn på eiendommen før du kan lagre.")
 
 def last_eiendom(navn):
     data = st.session_state.eiendommer.get(navn)
@@ -77,14 +95,10 @@ def slett_eiendom():
     if navn and navn in st.session_state.eiendommer:
         del st.session_state.eiendommer[navn]
         st.session_state["valgt_eiendom"] = ""
-        st.success(f"Eiendom '{navn}' slettet.")
+        st.session_state.lagret_sist = ""
         st.rerun()
 
-def nullstill(kategori):
-    st.session_state["nullstilt_felter"] = nullstillingsfelter[kategori]
-    st.rerun()
-
-# === Sidebar – inndata ===
+# Sidebar
 with st.sidebar:
     st.text_input("Navn på eiendom", key="eiendomsnavn")
     st.text_input("Finn-annonselenke", key="finnlink")
@@ -118,10 +132,13 @@ with st.sidebar:
         st.button("Last valgt eiendom", on_click=last_eiendom, args=(valgt,))
         st.button("Slett valgt eiendom", on_click=slett_eiendom)
 
-# === Hovedvisning ===
+# Hovedvisning
 st.subheader("Aktiv eiendom")
 st.markdown(f"**Navn:** {st.session_state.get('eiendomsnavn', '')}")
 st.markdown(f"**Finn-link:** {st.session_state.get('finnlink', '')}")
+
+if st.session_state.lagret_sist:
+    st.success(f"Eiendom '{st.session_state.lagret_sist}' er lagret!")
 
 st.subheader("Sammendrag")
 for k in felt_navn:

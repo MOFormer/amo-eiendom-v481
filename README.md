@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.14 – Nullstillingsknapper gjeninnført med eiendomsfunksjoner
+# AMO Eiendom v49.2.15 – Stabil lagring, bekreftelse og bredere scrollbar
