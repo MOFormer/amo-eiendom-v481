@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.15 – Stabil lagring, bekreftelse og bredere scrollbar
+# AMO Eiendom v49.2.16 – Automatisk lagring og 'Ny eiendom'-knapp
