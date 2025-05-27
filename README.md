@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.11 – Nullstilling skjer før visning, 100% stabil
+# AMO Eiendom v49.2.12 – Nullstilling husker hvilke felter som er 0 etter rerun
