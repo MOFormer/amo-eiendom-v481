@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.19 – Komplett versjon med grafer, lånevalg og cashflow
+# AMO Eiendom v49.2.20 – Komplett eiendomsverktøy
