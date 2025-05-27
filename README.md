@@ -1,1 +1,1 @@
-# AMO Eiendom v48.5.6 – fikser menyoppdatering og slett-knapp
+# AMO Eiendom v49.2.17 – Forbedret eiendomsvalg og slett-knapp øverst

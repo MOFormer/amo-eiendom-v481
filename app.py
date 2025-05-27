@@ -1,143 +1,118 @@
 
 import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
-st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
-
-# Passordbeskyttelse
-if "access_granted" not in st.session_state:
-    pwd = st.text_input("Skriv inn passord for tilgang", type="password")
-    if pwd == "amo123":
-        st.session_state.access_granted = True
-        st.experimental_rerun()
-    else:
-        st.stop()
-
-if "eiendommer" not in st.session_state:
-    st.session_state.eiendommer = {}
-
-# Hent valgt eiendom
-valg_liste = ["(Ny eiendom)"] + list(st.session_state.eiendommer.keys())
-valgt_navn = st.sidebar.selectbox("Velg eiendom", valg_liste)
-er_ny = valgt_navn == "(Ny eiendom)"
-data = st.session_state.eiendommer.get(valgt_navn, {}) if not er_ny else {}
-
-# Inndata
-navn = st.sidebar.text_input("Navn på eiendom", value=valgt_navn if not er_ny else "")
-finn_link = st.sidebar.text_input("Finn-lenke", value=data.get("finn", ""))
-kjøpesum = st.sidebar.number_input("Kjøpesum", value=data.get("kjøpesum", 3000000.0), step=100000.0)
-
-with st.sidebar.expander("Oppussing"):
-    riving = st.number_input("Utrydding/riving", value=data.get("riving", 20000.0))
-    bad = st.number_input("Bad", value=data.get("bad", 120000.0))
-    kjøkken = st.number_input("Kjøkken", value=data.get("kjøkken", 100000.0))
-    overflate = st.number_input("Overflate", value=data.get("overflate", 30000.0))
-    gulv = st.number_input("Gulv/dører/lister", value=data.get("gulv", 40000.0))
-    rørlegger = st.number_input("Rørlegger", value=data.get("rørlegger", 25000.0))
-    elektriker = st.number_input("Elektriker", value=data.get("elektriker", 30000.0))
-    utvendig = st.number_input("Utvendig", value=data.get("utvendig", 20000.0))
-oppussing = sum([riving, bad, kjøkken, overflate, gulv, rørlegger, elektriker, utvendig])
-st.sidebar.markdown(f"**Total oppussing:** {int(oppussing):,} kr")
-
-leie = st.sidebar.number_input("Leieinntekter/mnd", value=data.get("leie", 22000.0))
-
-with st.sidebar.expander("Driftskostnader per år"):
-    forsikring = st.number_input("Forsikring", value=data.get("forsikring", 8000.0))
-    strøm = st.number_input("Strøm", value=data.get("strøm", 12000.0))
-    kommunale = st.number_input("Kommunale avg./felleskost.", value=data.get("kommunale", 9000.0))
-    internett = st.number_input("Internett", value=data.get("internett", 3000.0))
-    vedlikehold = st.number_input("Vedlikehold", value=data.get("vedlikehold", 8000.0))
-drift = sum([forsikring, strøm, kommunale, internett, vedlikehold])
-st.sidebar.markdown(f"**Totale driftskostnader:** {int(drift):,} kr")
-
-lån = st.sidebar.number_input("Lån", value=data.get("lån", 2700000.0))
-rente = st.sidebar.number_input("Rente (%)", value=data.get("rente", 5.0))
-løpetid = st.sidebar.number_input("Løpetid (år)", value=data.get("løpetid", 25))
-avdragsfri = st.sidebar.number_input("Avdragsfri (år)", value=data.get("avdragsfri", 2))
-lånetype = st.sidebar.selectbox("Lånetype", ["Annuitetslån", "Serielån"], index=["Annuitetslån", "Serielån"].index(data.get("lånetype", "Annuitetslån")))
-eierform = st.sidebar.radio("Eierform", ["Privat", "AS"], index=["Privat", "AS"].index(data.get("eierform", "Privat")))
-vis_grafer = st.sidebar.checkbox("Vis grafer", value=True)
-
-# Lagre og slett
-if st.sidebar.button("Lagre endringer"):
-    st.session_state.eiendommer[navn] = {
-        "finn": finn_link, "kjøpesum": kjøpesum, "leie": leie,
-        "lån": lån, "rente": rente, "løpetid": løpetid, "avdragsfri": avdragsfri,
-        "lånetype": lånetype, "eierform": eierform,
-        "riving": riving, "bad": bad, "kjøkken": kjøkken, "overflate": overflate,
-        "gulv": gulv, "rørlegger": rørlegger, "elektriker": elektriker, "utvendig": utvendig,
-        "forsikring": forsikring, "strøm": strøm, "kommunale": kommunale,
-        "internett": internett, "vedlikehold": vedlikehold
+st.markdown("""
+    <style>
+    ::-webkit-scrollbar {
+        width: 12px;
     }
-    st.success(f"Eiendom '{navn}' lagret.")
-    st.experimental_rerun()
+    ::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 6px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-if not er_ny:
-    if st.sidebar.button("Slett eiendom"):
-        st.session_state.eiendommer.pop(valgt_navn, None)
-        st.success(f"Slettet '{valgt_navn}'.")
-        st.experimental_rerun()
+st.title("AMO Eiendom v49.2.17 – Raskt eiendomsvalg og sletting")
 
-# Beregning
-total = kjøpesum + oppussing + kjøpesum * 0.025
-n = int(løpetid * 12)
-af = int(avdragsfri * 12)
-r = rente / 100 / 12
+# Innlogging
+if "access_granted" not in st.session_state:
+    pwd = st.text_input("Passord", type="password")
+    if pwd != "amo123":
+        st.stop()
+    st.session_state.access_granted = True
+    st.rerun()
 
-if lånetype == "Annuitetslån" and r > 0:
-    terminbeløp = lån * (r * (1 + r)**(n - af)) / ((1 + r)**(n - af) - 1)
-else:
-    terminbeløp = lån / (n - af) if (n - af) > 0 else 0
+# Feltstruktur og init
+felt_navn = {
+    "kjøpesum": 0.0, "leie": 0.0, "lån": 0.0, "rente": 0.0, "løpetid": 0.0, "avdragsfri": 0.0,
+    "forsikring": 0.0, "strøm": 0.0, "kommunale": 0.0, "internett": 0.0, "vedlikehold": 0.0,
+    "riving": 0.0, "bad": 0.0, "kjøkken": 0.0, "overflate": 0.0, "gulv": 0.0,
+    "rørlegger": 0.0, "elektriker": 0.0, "utvendig": 0.0,
+    "finnlink": "", "eiendomsnavn": ""
+}
+for k, v in felt_navn.items():
+    st.session_state.setdefault(k, v)
+st.session_state.setdefault("eiendommer", {})
+st.session_state.setdefault("valgt_eiendom", "")
+st.session_state.setdefault("ny_klikket", False)
 
-saldo = lån
-restgjeld, avdrag, renter_liste, netto_cf, akk_cf = [], [], [], [], []
-akk = 0
+# === Funksjoner ===
+def lagre_aktiv_eiendom():
+    navn = st.session_state["eiendomsnavn"].strip()
+    if navn:
+        st.session_state.eiendommer[navn] = {k: st.session_state[k] for k in felt_navn}
+        st.session_state["valgt_eiendom"] = navn
 
-for m in range(n):
-    rente_mnd = saldo * r
-    if m < af:
-        avdrag_mnd = 0
-        termin = rente_mnd
-    elif lånetype == "Serielån":
-        avdrag_mnd = lån / (n - af)
-        termin = avdrag_mnd + rente_mnd
-    else:
-        avdrag_mnd = terminbeløp - rente_mnd
-        termin = terminbeløp
+def nullstill_alle():
+    for k, v in felt_navn.items():
+        st.session_state[k] = "" if isinstance(v, str) else 0.0
+    st.session_state["valgt_eiendom"] = ""
+    st.session_state["ny_klikket"] = False
+    st.rerun()
 
-    saldo -= avdrag_mnd
-    netto = leie - drift / 12 - termin
-    if eierform == "AS" and netto > 0:
-        netto -= netto * 0.375
-    akk += netto
+def ny_eiendom():
+    lagre_aktiv_eiendom()
+    st.session_state["ny_klikket"] = True
 
-    restgjeld.append(saldo)
-    avdrag.append(avdrag_mnd)
-    renter_liste.append(rente_mnd)
-    netto_cf.append(netto)
-    akk_cf.append(akk)
+def last_eiendom(navn):
+    if navn in st.session_state.eiendommer:
+        for k, v in st.session_state.eiendommer[navn].items():
+            st.session_state[k] = v
+        st.session_state["valgt_eiendom"] = navn
+        st.rerun()
 
-# Vis resultater
-st.subheader(f"Resultater for: {navn}")
-if finn_link:
-    st.markdown(f"[Se Finn-annonse]({finn_link})", unsafe_allow_html=True)
-st.metric("Total investering", f"{int(total):,} kr")
-st.metric("Brutto yield", f"{(leie * 12 / total) * 100:.2f} %")
-st.metric("Netto yield", f"{((leie * 12 - drift) / total) * 100:.2f} %")
+def slett_eiendom():
+    navn = st.session_state["valgt_eiendom"]
+    if navn in st.session_state.eiendommer:
+        del st.session_state.eiendommer[navn]
+        st.session_state["valgt_eiendom"] = ""
+        st.rerun()
 
-df = pd.DataFrame({
-    "Måned": list(range(1, n + 1)),
-    "Restgjeld": restgjeld,
-    "Avdrag": avdrag,
-    "Renter": renter_liste,
-    "Netto cashflow": netto_cf,
-    "Akk. cashflow": akk_cf
-})
-st.dataframe(df.head(60))
+# Automatisk lagring
+lagre_aktiv_eiendom()
+if st.session_state["ny_klikket"]:
+    nullstill_alle()
 
-if vis_grafer:
-    st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
-    st.line_chart(df[["Renter", "Avdrag"]])
-    st.line_chart(df["Restgjeld"])
+# === SIDEBAR ===
+with st.sidebar:
+    st.markdown("## Velg eiendom")
+    if st.session_state.eiendommer:
+        valgt = st.selectbox("Eiendommer", list(st.session_state.eiendommer.keys()), key="valgt_eiendom_drop")
+        st.button("Last valgt eiendom", on_click=last_eiendom, args=(valgt,))
+        st.button("Slett valgt eiendom", on_click=slett_eiendom)
+
+    st.markdown("---")
+    st.markdown("## Ny / Rediger eiendom")
+    st.text_input("Navn på eiendom", key="eiendomsnavn")
+    st.text_input("Finn-annonselenke", key="finnlink")
+    st.button("Ny eiendom", on_click=ny_eiendom)
+
+    st.markdown("### Grunnleggende")
+    st.number_input("Kjøpesum", key="kjøpesum", step=100000.0, format="%.0f")
+    st.number_input("Leie/mnd", key="leie", step=1000.0, format="%.0f")
+
+    st.markdown("### Oppussing")
+    for felt in ["riving", "bad", "kjøkken", "overflate", "gulv", "rørlegger", "elektriker", "utvendig"]:
+        st.number_input(felt.capitalize(), key=felt, step=10000.0, format="%.0f")
+
+    st.markdown("### Driftskostnader")
+    for felt in ["forsikring", "strøm", "kommunale", "internett", "vedlikehold"]:
+        st.number_input(felt.capitalize(), key=felt, step=1000.0, format="%.0f")
+
+    st.markdown("### Lån og rente")
+    st.number_input("Lån", key="lån", step=100000.0, format="%.0f")
+    st.number_input("Rente", key="rente", step=0.1, format="%.2f")
+    st.number_input("Løpetid", key="løpetid", step=1.0, format="%.0f")
+    st.number_input("Avdragsfri", key="avdragsfri", step=1.0, format="%.0f")
+
+# === HOVEDVISNING ===
+st.subheader("Aktiv eiendom")
+st.markdown(f"**Navn:** {st.session_state.get('eiendomsnavn', '')}")
+st.markdown(f"**Finn-link:** {st.session_state.get('finnlink', '')}")
+
+st.subheader("Sammendrag")
+for k in felt_navn:
+    if k not in ["eiendomsnavn", "finnlink"]:
+        st.write(f"{k}: {st.session_state[k]}")
