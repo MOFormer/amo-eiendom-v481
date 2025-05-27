@@ -2,9 +2,9 @@
 import streamlit as st
 
 st.set_page_config(layout="wide")
-st.title("AMO Eiendom v49.2.13 – Håndtering av eiendommer")
+st.title("AMO Eiendom v49.2.14 – Nullstilling og eiendomsvalg samlet")
 
-# Innlogging
+# === Innlogging ===
 if "access_granted" not in st.session_state:
     pwd = st.text_input("Passord", type="password")
     if pwd != "amo123":
@@ -12,7 +12,7 @@ if "access_granted" not in st.session_state:
     st.session_state.access_granted = True
     st.rerun()
 
-# Standardverdier
+# === Felter og kategorier ===
 felt_navn = {
     "kjøpesum": 3000000.0,
     "leie": 22000.0,
@@ -36,21 +36,32 @@ felt_navn = {
     "finnlink": "",
     "eiendomsnavn": ""
 }
+nullstillingsfelter = {
+    "grunnleggende": ["kjøpesum", "leie"],
+    "oppussing": ["riving", "bad", "kjøkken", "overflate", "gulv", "rørlegger", "elektriker", "utvendig"],
+    "drift": ["forsikring", "strøm", "kommunale", "internett", "vedlikehold"],
+    "finans": ["lån", "rente", "løpetid", "avdragsfri"],
+}
+st.session_state.setdefault("nullstilt_felter", [])
 
-for key, val in felt_navn.items():
-    st.session_state.setdefault(key, val)
-
-# Lagring av eiendommer
+# === Init state ===
+for k, v in felt_navn.items():
+    st.session_state.setdefault(k, v)
 st.session_state.setdefault("eiendommer", {})
 st.session_state.setdefault("valgt_eiendom", "")
 
-# Funksjoner
+# === Nullstilling etter flagg ===
+for f in st.session_state["nullstilt_felter"]:
+    st.session_state[f] = 0.0
+st.session_state["nullstilt_felter"] = []
+
+# === Funksjoner ===
 def lagre_eiendom():
     navn = st.session_state["eiendomsnavn"]
     if navn:
         st.session_state.eiendommer[navn] = {k: st.session_state[k] for k in felt_navn}
-        st.success(f"Eiendom '{navn}' lagret.")
         st.session_state.valgt_eiendom = navn
+        st.success(f"Eiendom '{navn}' lagret.")
         st.rerun()
 
 def last_eiendom(navn):
@@ -69,7 +80,11 @@ def slett_eiendom():
         st.success(f"Eiendom '{navn}' slettet.")
         st.rerun()
 
-# Sidebar – inndata
+def nullstill(kategori):
+    st.session_state["nullstilt_felter"] = nullstillingsfelter[kategori]
+    st.rerun()
+
+# === Sidebar – inndata ===
 with st.sidebar:
     st.text_input("Navn på eiendom", key="eiendomsnavn")
     st.text_input("Finn-annonselenke", key="finnlink")
@@ -77,30 +92,33 @@ with st.sidebar:
     st.markdown("### Grunnleggende")
     st.number_input("Kjøpesum", value=float(st.session_state["kjøpesum"]), key="kjøpesum", step=100000.0, format="%.0f")
     st.number_input("Leie/mnd", value=float(st.session_state["leie"]), key="leie", step=1000.0, format="%.0f")
+    st.button("Nullstill grunnleggende", on_click=nullstill, args=("grunnleggende",))
 
     st.markdown("### Oppussing")
-    for felt in ["riving", "bad", "kjøkken", "overflate", "gulv", "rørlegger", "elektriker", "utvendig"]:
+    for felt in nullstillingsfelter["oppussing"]:
         st.number_input(felt.capitalize(), value=float(st.session_state[felt]), key=felt, step=10000.0, format="%.0f")
+    st.button("Nullstill oppussing", on_click=nullstill, args=("oppussing",))
 
     st.markdown("### Driftskostnader")
-    for felt in ["forsikring", "strøm", "kommunale", "internett", "vedlikehold"]:
+    for felt in nullstillingsfelter["drift"]:
         st.number_input(felt.capitalize(), value=float(st.session_state[felt]), key=felt, step=1000.0, format="%.0f")
+    st.button("Nullstill driftskostnader", on_click=nullstill, args=("drift",))
 
     st.markdown("### Lån og rente")
     st.number_input("Lån", value=float(st.session_state["lån"]), key="lån", step=100000.0, format="%.0f")
     st.number_input("Rente", value=float(st.session_state["rente"]), key="rente", step=0.1, format="%.2f")
     st.number_input("Løpetid", value=float(st.session_state["løpetid"]), key="løpetid", step=1.0, format="%.0f")
     st.number_input("Avdragsfri", value=float(st.session_state["avdragsfri"]), key="avdragsfri", step=1.0, format="%.0f")
+    st.button("Nullstill finansiering", on_click=nullstill, args=("finans",))
 
     st.button("Lagre eiendom", on_click=lagre_eiendom)
 
     if st.session_state.eiendommer:
         valgt = st.selectbox("Velg eiendom", options=list(st.session_state.eiendommer.keys()), index=0 if not st.session_state["valgt_eiendom"] else list(st.session_state.eiendommer.keys()).index(st.session_state["valgt_eiendom"]))
-        if st.button("Last valgt eiendom"):
-            last_eiendom(valgt)
+        st.button("Last valgt eiendom", on_click=last_eiendom, args=(valgt,))
         st.button("Slett valgt eiendom", on_click=slett_eiendom)
 
-# Hovedvisning
+# === Hovedvisning ===
 st.subheader("Aktiv eiendom")
 st.markdown(f"**Navn:** {st.session_state.get('eiendomsnavn', '')}")
 st.markdown(f"**Finn-link:** {st.session_state.get('finnlink', '')}")

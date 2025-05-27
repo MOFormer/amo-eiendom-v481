@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.13 – Eiendomsnavn, Finn-link og lagring/valg/sletting av eiendommer
+# AMO Eiendom v49.2.14 – Nullstillingsknapper gjeninnført med eiendomsfunksjoner
