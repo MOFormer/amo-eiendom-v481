@@ -1,1 +1,1 @@
-# AMO Eiendom v49.2.12 – Nullstilling husker hvilke felter som er 0 etter rerun
+# AMO Eiendom v49.2.13 – Eiendomsnavn, Finn-link og lagring/valg/sletting av eiendommer
