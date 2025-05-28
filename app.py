@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 st.markdown(
     """
     <style>
+    /* Bredere scrollbar for både sidebar og hovedpanel */
     ::-webkit-scrollbar {
         width: 16px;
         background: #F0F2F6;
@@ -15,6 +16,7 @@ st.markdown(
         border-radius: 8px;
         border: 4px solid #F0F2F6;
     }
+    /* For Firefox */
     html {
         scrollbar-width: thick;
         scrollbar-color: #aaaaaa #F0F2F6;
@@ -24,20 +26,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.set_page_config(layout="wide")
-st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
-
-# Passordbeskyttelse
-if "access_granted" not in st.session_state:
-    pwd = st.text_input("Skriv inn passord for tilgang", type="password")
-    if pwd == "amo123":
-        st.session_state.access_granted = True
-        st.experimental_rerun()
-    else:
-        st.stop()
-
-if "eiendommer" not in st.session_state:
-    st.session_state.eiendommer = {}
 
 # Hent valgt eiendom
 valg_liste = ["(Ny eiendom)"] + list(st.session_state.eiendommer.keys())
