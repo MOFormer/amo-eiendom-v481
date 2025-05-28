@@ -1,14 +1,3 @@
-<style>
-/* Øk scrollbar-bredde */
-::-webkit-scrollbar {
-width: 16px;
-}
-::-webkit-scrollbar-thumb {
-background-color: #888;
-border-radius: 8px;
-}
-</style>
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -151,23 +140,3 @@ if vis_grafer:
 st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
 st.line_chart(df[["Renter", "Avdrag"]])
 st.line_chart(df["Restgjeld"])
-
-
-
-# Nullstillingsfunksjon
-def nullstill_felter(feltnavn_liste):
-for f in feltnavn_liste:
-if f in st.session_state:
-st.session_state[f] = 0.0
-
-# Nullstill Oppussing
-if st.button("Nullstill Oppussing"):
-nullstill_felter(["riving", "bad", "kjøkken", "overflate", "gulv", "rørlegger", "elektriker", "utvendig"])
-
-# Nullstill Driftskostnader
-if st.button("Nullstill Driftskostnader"):
-nullstill_felter(["forsikring", "strøm", "kommunale_avgifter", "internett", "vedlikehold"])
-
-# Nullstill Lån
-if st.button("Nullstill Lån"):
-nullstill_felter(["kjøpesum", "egenkapital", "lån", "rente", "avdragstid", "lån_type"])
