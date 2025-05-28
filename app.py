@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 st.markdown(
     """
     <style>
-    /* Bredere scrollbar for både sidebar og hovedpanel */
     ::-webkit-scrollbar {
         width: 16px;
         background: #F0F2F6;
@@ -16,7 +15,6 @@ st.markdown(
         border-radius: 8px;
         border: 4px solid #F0F2F6;
     }
-    /* For Firefox */
     html {
         scrollbar-width: thick;
         scrollbar-color: #aaaaaa #F0F2F6;
