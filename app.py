@@ -3,7 +3,8 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
+st.set_page_config(layout="wide")
+st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
 
 # Passordbeskyttelse
 if "access_granted" not in st.session_state:
