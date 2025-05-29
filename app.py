@@ -4,6 +4,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
+
+if "trigg_rerun" not in st.session_state:
+    st.session_state.trigg_rerun = False
+
+# Sett rerun i gang hvis flagget er aktivert
+if st.session_state.trigg_rerun:
+    st.session_state.trigg_rerun = False # Deaktiver etter bruk
+    st.experimental_rerun()
+
 st.markdown("""
     <style>
     ::-webkit-scrollbar {
