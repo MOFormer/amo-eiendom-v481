@@ -1,3 +1,1 @@
-# Eiendomsapp
-
-Beskrivelse av eiendomsapp.
+# AMO Eiendom v48.5.6 – fikser menyoppdatering og slett-knapp
