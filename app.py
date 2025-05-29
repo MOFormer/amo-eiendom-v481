@@ -4,6 +4,21 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
+st.markdown("""
+    <style>
+    ::-webkit-scrollbar {
+        width: 16px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: #555;
+    }
+    </style>
+""", unsafe_allow_html=True)
+st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
 
 # Passordbeskyttelse
 if "access_granted" not in st.session_state:
@@ -59,6 +74,7 @@ lånetype = st.sidebar.selectbox("Lånetype", ["Annuitetslån", "Serielån"], in
 eierform = st.sidebar.radio("Eierform", ["Privat", "AS"], index=["Privat", "AS"].index(data.get("eierform", "Privat")))
 vis_grafer = st.sidebar.checkbox("Vis grafer", value=True)
 
+# Lagre og slett
 if st.sidebar.button("Lagre endringer"):
     st.session_state.eiendommer[navn] = {
         "finn": finn_link, "kjøpesum": kjøpesum, "leie": leie,
@@ -70,7 +86,79 @@ if st.sidebar.button("Lagre endringer"):
         "internett": internett, "vedlikehold": vedlikehold
     }
     st.success(f"Eiendom '{navn}' lagret.")
+    st.experimental_rerun()
 
-# Placeholder beregning og fremvisning
-st.write("Her kommer beregning og grafer...")
+if not er_ny:
+    if st.sidebar.button("Slett eiendom"):
+        st.session_state.eiendommer.pop(valgt_navn, None)
+        st.success(f"Slettet '{valgt_navn}'.")
+        st.experimental_rerun()
 
+# Beregning
+total = kjøpesum + oppussing + kjøpesum * 0.025
+n = int(løpetid * 12)
+af = int(avdragsfri * 12)
+r = rente / 100 / 12
+
+if lånetype == "Annuitetslån" and r > 0:
+    terminbeløp = lån * (r * (1 + r)**(n - af)) / ((1 + r)**(n - af) - 1)
+else:
+    terminbeløp = lån / (n - af) if (n - af) > 0 else 0
+
+saldo = lån
+restgjeld, avdrag, renter_liste, netto_cf, akk_cf = [], [], [], [], []
+akk = 0
+
+for m in range(n):
+    rente_mnd = saldo * r
+    if m < af:
+        avdrag_mnd = 0
+        termin = rente_mnd
+    elif lånetype == "Serielån":
+        avdrag_mnd = lån / (n - af)
+        termin = avdrag_mnd + rente_mnd
+    else:
+        avdrag_mnd = terminbeløp - rente_mnd
+        termin = terminbeløp
+
+    saldo -= avdrag_mnd
+    netto = leie - drift / 12 - termin
+    if eierform == "AS" and netto > 0:
+        netto -= netto * 0.375
+    akk += netto
+
+
+
+    restgjeld.append(saldo)
+    avdrag.append(avdrag_mnd)
+    renter_liste.append(rente_mnd)
+    netto_cf.append(netto)
+    akk_cf.append(akk)
+
+        # Beregn årlig total cashflow inkludert avdrag
+cashflow_innkl_avdrag = [netto_cf[i] + avdrag[i] for i in range(len(netto_cf))]
+total_årlig_cashflow_med_avdrag = sum(cashflow_innkl_avdrag[:12]) # Første år (12 måneder)
+
+# Vis resultater
+st.subheader(f"Resultater for: {navn}")
+if finn_link:
+    st.markdown(f"[Se Finn-annonse]({finn_link})", unsafe_allow_html=True)
+st.metric("Total investering", f"{int(total):,} kr")
+st.metric("Brutto yield", f"{(leie * 12 / total) * 100:.2f} %")
+st.metric("Netto yield", f"{((leie * 12 - drift) / total) * 100:.2f} %")
+st.metric("Årlig total cashflow inkl. avdrag", f"{int(total_årlig_cashflow_med_avdrag):,} kr")
+
+df = pd.DataFrame({
+    "Måned": list(range(1, n + 1)),
+    "Restgjeld": restgjeld,
+    "Avdrag": avdrag,
+    "Renter": renter_liste,
+    "Netto cashflow": netto_cf,
+    "Akk. cashflow": akk_cf
+})
+st.dataframe(df.head(60))
+
+if vis_grafer:
+    st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
+    st.line_chart(df[["Renter", "Avdrag"]])
+    st.line_chart(df["Restgjeld"])
