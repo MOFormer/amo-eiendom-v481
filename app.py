@@ -111,6 +111,9 @@ akk = 0
 
 for m in range(n):
     rente_mnd = saldo * r
+    # Beregn årlig total cashflow inkludert avdrag
+cashflow_innkl_avdrag = [netto_cf[i] + avdrag[i] for i in range(len(netto_cf))]
+total_årlig_cashflow_med_avdrag = sum(cashflow_innkl_avdrag[:12]) # Første år (12 måneder)
     if m < af:
         avdrag_mnd = 0
         termin = rente_mnd
@@ -140,6 +143,7 @@ if finn_link:
 st.metric("Total investering", f"{int(total):,} kr")
 st.metric("Brutto yield", f"{(leie * 12 / total) * 100:.2f} %")
 st.metric("Netto yield", f"{((leie * 12 - drift) / total) * 100:.2f} %")
+st.metric("Årlig total cashflow inkl. avdrag", f"{int(total_årlig_cashflow_med_avdrag):,} kr")
 
 df = pd.DataFrame({
     "Måned": list(range(1, n + 1)),
