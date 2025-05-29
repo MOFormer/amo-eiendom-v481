@@ -31,6 +31,7 @@ if "access_granted" not in st.session_state:
 
 if "eiendommer" not in st.session_state:
     st.session_state.eiendommer = {}
+    
 if "trigg_rerun" in st.session_state and st.session_state.trigg_rerun:
 st.session_state.trigg_rerun = False
 st.experimental_rerun()
