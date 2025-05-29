@@ -5,16 +5,26 @@ import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
 
-# Init session state tidlig
+# Init session state
 if "eiendommer" not in st.session_state:
     st.session_state.eiendommer = {}
 
-    if "access_granted" not in st.session_state:
+if "trigg_rerun" not in st.session_state:
+    st.session_state.trigg_rerun = False
+
+# Utfør rerun hvis flagg er satt
+if st.session_state.trigg_rerun:
+    st.session_state.trigg_rerun = False
+    st.experimental_rerun()
+
+# Passordbeskyttelse
+if "access_granted" not in st.session_state:
     pwd = st.text_input("Skriv inn passord for tilgang", type="password")
-        if pwd == "amo123":
-            st.session_state.access_granted = True
-            else:
-                st.stop()
+    if pwd == "amo123":
+        st.session_state.access_granted = True
+        st.experimental_rerun()
+    else:
+        st.stop()
 
 st.markdown("""
     <style>
@@ -31,15 +41,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
-
-# Passordbeskyttelse
-if "access_granted" not in st.session_state:
-    pwd = st.text_input("Skriv inn passord for tilgang", type="password")
-    if pwd == "amo123":
-        st.session_state.access_granted = True
-# IKKE kjør rerun her
-    else:
-        st.stop()
     
     
 
