@@ -33,11 +33,11 @@ st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
 # Passordbeskyttelse
 if "access_granted" not in st.session_state:
     pwd = st.text_input("Skriv inn passord for tilgang", type="password")
-if pwd == "amo123":
+    if pwd == "amo123":
     st.session_state.access_granted = True
 # IKKE kjør rerun her
-else:
-    st.stop()
+    else:
+        st.stop()
     
     
 
