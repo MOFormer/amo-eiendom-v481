@@ -104,7 +104,7 @@ if not er_ny:
     if st.sidebar.button("Slett eiendom"):
         st.session_state.eiendommer.pop(valgt_navn, None)
         st.success(f"Slettet '{valgt_navn}'.")
-        st.experimental_rerun()
+        st.session_state.trigg_rerun = True
 
 # Beregning
 total = kjøpesum + oppussing + kjøpesum * 0.025
