@@ -3,14 +3,14 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide") # Dette må komme først
+st.set_page_config(layout="wide")
 
-# 🟦 Initialisering av session state for rerun
+# Første blokk i filen etter imports
 if "trigg_rerun" not in st.session_state:
     st.session_state.trigg_rerun = False
 
-# 🟦 Utfør rerun hvis flagg er satt
-if st.session_state.trigg_rerun:
+# Utfør rerun hvis flagg er satt og brukeren har tilgang
+if st.session_state.trigg_rerun and st.session_state.get("access_granted", False):
     st.session_state.trigg_rerun = False
     st.experimental_rerun()
 
@@ -33,16 +33,11 @@ st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
 # Passordbeskyttelse
 if "access_granted" not in st.session_state:
     pwd = st.text_input("Skriv inn passord for tilgang", type="password")
-    if pwd == "amo123":
-        st.session_state.access_granted = True
-        st.experimental_rerun()
-    else:
-        st.stop()
-
-if "eiendommer" not in st.session_state:
-    st.session_state.eiendommer = {}
-    
-if "trigg_rerun" in st.session_state and st.session_state.trigg_rerun:
+if pwd == "amo123":
+    st.session_state.access_granted = True
+# IKKE kjør rerun her
+else:
+    st.stop()
     
     
 
