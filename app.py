@@ -9,12 +9,12 @@ st.set_page_config(layout="wide")
 if "eiendommer" not in st.session_state:
     st.session_state.eiendommer = {}
 
-if "access_granted" not in st.session_state:
+    if "access_granted" not in st.session_state:
     pwd = st.text_input("Skriv inn passord for tilgang", type="password")
-if pwd == "amo123":
-    st.session_state.access_granted = True
-else:
-    st.stop()
+        if pwd == "amo123":
+            st.session_state.access_granted = True
+            else:
+                st.stop()
 
 st.markdown("""
     <style>
