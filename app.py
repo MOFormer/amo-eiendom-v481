@@ -44,7 +44,7 @@ if "eiendommer" not in st.session_state:
     
 if "trigg_rerun" in st.session_state and st.session_state.trigg_rerun:
     st.session_state.trigg_rerun = False
-    st.experimental_rerun()
+    
 
 # Hent valgt eiendom
 valg_liste = ["(Ny eiendom)"] + list(st.session_state.eiendommer.keys())
@@ -105,7 +105,7 @@ if not er_ny:
     if st.sidebar.button("Slett eiendom"):
         st.session_state.eiendommer.pop(valgt_navn, None)
         st.success(f"Slettet '{valgt_navn}'.")
-        st.session_state.trigg_rerun = True
+        
 
 # Beregning
 total = kjøpesum + oppussing + kjøpesum * 0.025
