@@ -33,8 +33,8 @@ if "eiendommer" not in st.session_state:
     st.session_state.eiendommer = {}
     
 if "trigg_rerun" in st.session_state and st.session_state.trigg_rerun:
-st.session_state.trigg_rerun = False
-st.experimental_rerun()
+    st.session_state.trigg_rerun = False
+    st.experimental_rerun()
 
 # Hent valgt eiendom
 valg_liste = ["(Ny eiendom)"] + list(st.session_state.eiendommer.keys())
