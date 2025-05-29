@@ -76,17 +76,17 @@ vis_grafer = st.sidebar.checkbox("Vis grafer", value=True)
 
 # Lagre og slett
 if st.sidebar.button("Lagre endringer"):
-    st.session_state.eiendommer[navn] = {
-        "finn": finn_link, "kjøpesum": kjøpesum, "leie": leie,
-        "lån": lån, "rente": rente, "løpetid": løpetid, "avdragsfri": avdragsfri,
-        "lånetype": lånetype, "eierform": eierform,
-        "riving": riving, "bad": bad, "kjøkken": kjøkken, "overflate": overflate,
-        "gulv": gulv, "rørlegger": rørlegger, "elektriker": elektriker, "utvendig": utvendig,
-        "forsikring": forsikring, "strøm": strøm, "kommunale": kommunale,
-        "internett": internett, "vedlikehold": vedlikehold
-    }
-    st.success(f"Eiendom '{navn}' lagret.")
-    st.experimental_rerun()
+st.session_state.eiendommer[navn] = {
+"finn": finn_link, "kjøpesum": kjøpesum, "leie": leie,
+"lån": lån, "rente": rente, "løpetid": løpetid, "avdragsfri": avdragsfri,
+"lånetype": lånetype, "eierform": eierform,
+"riving": riving, "bad": bad, "kjøkken": kjøkken, "overflate": overflate,
+"gulv": gulv, "rørlegger": rørlegger, "elektriker": elektriker, "utvendig": utvendig,
+"forsikring": forsikring, "strøm": strøm, "kommunale": kommunale,
+"internett": internett, "vedlikehold": vedlikehold
+}
+st.success(f"Eiendom '{navn}' lagret.")
+st.experimental_rerun() #
 
 if not er_ny:
     if st.sidebar.button("Slett eiendom"):
