@@ -7,23 +7,23 @@ st.set_page_config(layout="wide")
 
 # Init session state
 if "access_granted" not in st.session_state:
-pwd = st.text_input("Skriv inn passord for tilgang", type="password")
-if pwd == "amo123":
-st.session_state.access_granted = True
-st.experimental_rerun() # Nå rerunner vi trygt
-else:
-st.stop()
+    pwd = st.text_input("Skriv inn passord for tilgang", type="password")
+    if pwd == "amo123":
+        st.session_state.access_granted = True
+        st.experimental_rerun() # Nå rerunner vi trygt
+    else:
+        st.stop()
 
 if "eiendommer" not in st.session_state:
-st.session_state.eiendommer = {}
+    st.session_state.eiendommer = {}
 
 if "trigg_rerun" not in st.session_state:
-st.session_state.trigg_rerun = False
+    st.session_state.trigg_rerun = False
 
 # Utfør rerun hvis flagg er satt og alt er initialisert
 if st.session_state.trigg_rerun:
-st.session_state.trigg_rerun = False
-st.experimental_rerun()
+    st.session_state.trigg_rerun = False
+    st.experimental_rerun()
 
 st.markdown("""
     <style>
