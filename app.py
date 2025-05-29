@@ -111,9 +111,6 @@ akk = 0
 
 for m in range(n):
     rente_mnd = saldo * r
-    # Beregn årlig total cashflow inkludert avdrag
-cashflow_innkl_avdrag = [netto_cf[i] + avdrag[i] for i in range(len(netto_cf))]
-total_årlig_cashflow_med_avdrag = sum(cashflow_innkl_avdrag[:12]) # Første år (12 måneder)
     if m < af:
         avdrag_mnd = 0
         termin = rente_mnd
@@ -129,6 +126,10 @@ total_årlig_cashflow_med_avdrag = sum(cashflow_innkl_avdrag[:12]) # Første år
     if eierform == "AS" and netto > 0:
         netto -= netto * 0.375
     akk += netto
+
+        # Beregn årlig total cashflow inkludert avdrag
+cashflow_innkl_avdrag = [netto_cf[i] + avdrag[i] for i in range(len(netto_cf))]
+total_årlig_cashflow_med_avdrag = sum(cashflow_innkl_avdrag[:12]) # Første år (12 måneder)
 
     restgjeld.append(saldo)
     avdrag.append(avdrag_mnd)
