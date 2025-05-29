@@ -5,14 +5,16 @@ import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
 
-# Første blokk i filen etter imports
-if "trigg_rerun" not in st.session_state:
-    st.session_state.trigg_rerun = False
+# Init session state tidlig
+if "eiendommer" not in st.session_state:
+    st.session_state.eiendommer = {}
 
-# Utfør rerun hvis flagg er satt og brukeren har tilgang
-if st.session_state.trigg_rerun and st.session_state.get("access_granted", False):
-    st.session_state.trigg_rerun = False
-    st.experimental_rerun()
+if "access_granted" not in st.session_state:
+    pwd = st.text_input("Skriv inn passord for tilgang", type="password")
+if pwd == "amo123":
+    st.session_state.access_granted = True
+else:
+    st.stop()
 
 st.markdown("""
     <style>
