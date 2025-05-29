@@ -86,7 +86,7 @@ st.session_state.eiendommer[navn] = {
 "internett": internett, "vedlikehold": vedlikehold
 }
 st.success(f"Eiendom '{navn}' lagret.")
-st.experimental_rerun() #
+ #
 
 if not er_ny:
     if st.sidebar.button("Slett eiendom"):
