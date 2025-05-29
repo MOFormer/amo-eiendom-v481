@@ -3,14 +3,14 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide") # Må alltid være først!
 
+# --- Første del: Initialiser rerun og sjekk
 if "trigg_rerun" not in st.session_state:
     st.session_state.trigg_rerun = False
 
-# Sett rerun i gang hvis flagget er aktivert
 if st.session_state.trigg_rerun:
-    st.session_state.trigg_rerun = False # Deaktiver etter bruk
+    st.session_state.trigg_rerun = False
     st.experimental_rerun()
 
 st.markdown("""
