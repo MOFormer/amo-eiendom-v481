@@ -3,29 +3,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-st.markdown(
-    """
-    <style>
-    ::-webkit-scrollbar {
-        width: 16px;
-        background: #F0F2F6;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: #aaaaaa;
-        border-radius: 8px;
-        border: 4px solid #F0F2F6;
-    }
-    html {
-        scrollbar-width: thick;
-        scrollbar-color: #aaaaaa #F0F2F6;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
-st.set_page_config(layout="wide")
-st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
 
 # Passordbeskyttelse
 if "access_granted" not in st.session_state:
