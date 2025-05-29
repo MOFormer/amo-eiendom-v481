@@ -4,8 +4,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
-with open("styles.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+st.markdown("""
+    <style>
+    ::-webkit-scrollbar {
+        width: 16px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: #555;
+    }
+    </style>
+""", unsafe_allow_html=True)
 st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
 
 # Passordbeskyttelse
