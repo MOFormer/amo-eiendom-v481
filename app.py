@@ -127,15 +127,17 @@ for m in range(n):
         netto -= netto * 0.375
     akk += netto
 
-        # Beregn årlig total cashflow inkludert avdrag
-cashflow_innkl_avdrag = [netto_cf[i] + avdrag[i] for i in range(len(netto_cf))]
-total_årlig_cashflow_med_avdrag = sum(cashflow_innkl_avdrag[:12]) # Første år (12 måneder)
+
 
     restgjeld.append(saldo)
     avdrag.append(avdrag_mnd)
     renter_liste.append(rente_mnd)
     netto_cf.append(netto)
     akk_cf.append(akk)
+
+        # Beregn årlig total cashflow inkludert avdrag
+cashflow_innkl_avdrag = [netto_cf[i] + avdrag[i] for i in range(len(netto_cf))]
+total_årlig_cashflow_med_avdrag = sum(cashflow_innkl_avdrag[:12]) # Første år (12 måneder)
 
 # Vis resultater
 st.subheader(f"Resultater for: {navn}")
