@@ -5,21 +5,30 @@ import pandas as pd
 st.set_page_config(layout="wide")
 st.markdown("""
     <style>
-    .scroll-container {
-        max-height: 400px;
+    .scroll-wrapper {
+        max-height: 500px;
         overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 8px;
+        margin-top: 1rem;
     }
-    .scroll-container::-webkit-scrollbar {
-        width: 50px;
+
+    .scroll-wrapper::-webkit-scrollbar {
+        width: 24px;
     }
-    .scroll-container::-webkit-scrollbar-thumb {
-        background-color: #888;
-        border-radius: 50px;
+
+    .scroll-wrapper::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 12px;
+    }
+
+    .scroll-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #555;
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("Eiendomskalkulator")
+st.title("Eiendomskalkulator – med bred scrollbar ✅")
 
 # ------------------ Input ------------------
 st.sidebar.header("Eiendomsinfo")
@@ -111,11 +120,11 @@ st.metric("Total investering", f"{int(total_investering):,} kr")
 st.metric("Brutto yield", f"{(leie * 12 / total_investering) * 100:.2f} %")
 st.metric("Netto yield", f"{((leie * 12 - drift) / total_investering) * 100:.2f} %")
 
-# ------------------ Tabellvisning med bred scrollbar ------------------
-st.subheader("Kontantstrøm (første 60 måneder)")
-st.markdown('<div class="scroll-container">', unsafe_allow_html=True)
-st.table(df.head(60))
-st.markdown('</div>', unsafe_allow_html=True)
+# ------------------ Scrollbar med HTML-tabell ------------------
+st.subheader("Kontantstrøm (første 60 måneder) med bred scrollbar")
+
+html_table = df.head(60).to_html(index=False)
+st.markdown(f'<div class="scroll-wrapper">{html_table}</div>', unsafe_allow_html=True)
 
 # ------------------ Grafer ------------------
 st.subheader("Grafer")
