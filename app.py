@@ -74,7 +74,12 @@ rente = st.sidebar.number_input("Rente (%)", value=data.get("rente", 5.0))
 løpetid = st.sidebar.number_input("Løpetid (år)", value=data.get("løpetid", 25))
 avdragsfri = st.sidebar.number_input("Avdragsfri (år)", value=data.get("avdragsfri", 2))
 lånetype = st.sidebar.selectbox("Lånetype", ["Annuitetslån", "Serielån"], index=["Annuitetslån", "Serielån"].index(data.get("lånetype", "Annuitetslån")))
-eierform = st.sidebar.radio("Eierform", ["Privat", "AS"], index=["Privat", "AS"].index(data.get("eierf
+eierform = st.sidebar.radio(
+    "Eierform", 
+    ["Privat", "AS"], 
+    index=["Privat", "AS"].index(data.get("eierform", "Privat"))
+)
+
 
     st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
     st.line_chart(df[["Renter", "Avdrag"]])
