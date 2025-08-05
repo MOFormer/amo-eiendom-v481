@@ -31,7 +31,6 @@ else:
     st.error("Feil passord")
     st.stop()
 
-
 # --------- Initialisering ---------
 if "eiendommer" not in st.session_state:
     st.session_state.eiendommer = {}
