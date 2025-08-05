@@ -7,7 +7,7 @@ st.set_page_config(layout="wide")
 st.markdown("""
     <style>
     ::-webkit-scrollbar {
-        width: 16px;
+        width: 50px;
     }
     ::-webkit-scrollbar-thumb {
         background-color: #888;
