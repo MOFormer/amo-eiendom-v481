@@ -7,12 +7,12 @@ st.markdown("""
     <style>
     /* Gjør scrollbaren mer synlig */
     div[data-testid="stDataFrameScrollable"]::-webkit-scrollbar {
-        width: 16px;
+        width: 50px;
     }
 
     div[data-testid="stDataFrameScrollable"]::-webkit-scrollbar-thumb {
         background-color: #444;
-        border-radius: 8px;
+        border-radius: 50px;
     }
 
     div[data-testid="stDataFrameScrollable"]::-webkit-scrollbar-thumb:hover {
