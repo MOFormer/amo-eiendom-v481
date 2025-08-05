@@ -7,11 +7,11 @@ st.set_page_config(layout="wide")
 st.markdown("""
     <style>
     ::-webkit-scrollbar {
-        width: 24px;  /* Økt bredde */
+        width: 50px;  /* Økt bredde */
     }
     ::-webkit-scrollbar-thumb {
         background-color: #888;
-        border-radius: 12px;
+        border-radius: 50px;
     }
     ::-webkit-scrollbar-thumb:hover {
         background-color: #555;
