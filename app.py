@@ -7,17 +7,18 @@ st.set_page_config(layout="wide")
 st.markdown("""
     <style>
     ::-webkit-scrollbar {
-        width: 1px;
+        width: 24px;  /* Økt bredde */
     }
     ::-webkit-scrollbar-thumb {
         background-color: #888;
-        border-radius: 50px;
+        border-radius: 12px;
     }
     ::-webkit-scrollbar-thumb:hover {
         background-color: #555;
     }
     </style>
 """, unsafe_allow_html=True)
+
 st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
 
 # --------- Passordbeskyttelse ---------
