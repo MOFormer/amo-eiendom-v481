@@ -10,11 +10,11 @@ st.markdown("""
         overflow-y: auto;
     }
     .scroll-container::-webkit-scrollbar {
-        width: 20px;
+        width: 50px;
     }
     .scroll-container::-webkit-scrollbar-thumb {
         background-color: #888;
-        border-radius: 10px;
+        border-radius: 50px;
     }
     </style>
 """, unsafe_allow_html=True)
