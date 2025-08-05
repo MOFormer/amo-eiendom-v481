@@ -6,18 +6,23 @@ import matplotlib.pyplot as plt
 st.set_page_config(layout="wide")
 st.markdown("""
     <style>
-    ::-webkit-scrollbar {
-        width: 50px;  /* Økt bredde */
+    .scroll-container {
+        max-height: 500px;
+        overflow-y: scroll;
     }
-    ::-webkit-scrollbar-thumb {
+    .scroll-container::-webkit-scrollbar {
+        width: 24px;
+    }
+    .scroll-container::-webkit-scrollbar-thumb {
         background-color: #888;
-        border-radius: 50px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background-color: #555;
+        border-radius: 12px;
     }
     </style>
 """, unsafe_allow_html=True)
+
+st.markdown('<div class="scroll-container">', unsafe_allow_html=True)
+st.dataframe(df)
+st.markdown('</div>', unsafe_allow_html=True)
 
 st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
 
