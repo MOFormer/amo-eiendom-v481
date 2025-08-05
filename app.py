@@ -136,9 +136,12 @@ def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierf
         netto_cf.append(netto)
         akk_cf.append(akk)
 
-    df = pd.DataFrame({
-        "Måned": list(range(1, n + 1)),
-        "Restgjeld": restgjeld,
-        "Avdrag": avdrag,
-        "Renter": renter_liste,
-        "Netto cashf
+df = pd.DataFrame({
+    "Måned": list(range(1, n + 1)),
+    "Restgjeld": restgjeld,
+    "Avdrag": avdrag,
+    "Renter": renter_liste,
+    "Netto cashflow": netto_cf,
+    "Akk. cashflow": akk_cf
+})
+
