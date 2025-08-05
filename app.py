@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# --------- Konfigurasjon og stil ---------
+# --------- Stil og layout ---------
 st.set_page_config(layout="wide")
 st.markdown("""
     <style>
@@ -17,16 +17,15 @@ st.markdown("""
         background-color: #888;
         border-radius: 12px;
     }
+    .scroll-container::-webkit-scrollbar-thumb:hover {
+        background-color: #555;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="scroll-container">', unsafe_allow_html=True)
-st.dataframe(df)
-st.markdown('</div>', unsafe_allow_html=True)
-
 st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
 
-# --------- Passordbeskyttelse ---------
+# --------- Passord ---------
 if "access_granted" not in st.session_state:
     pwd = st.text_input("Skriv inn passord for tilgang", type="password")
     if pwd == "amo123":
@@ -37,17 +36,17 @@ if "access_granted" not in st.session_state:
         st.error("Feil passord")
         st.stop()
 
-# --------- Initialisering ---------
+# --------- Init ---------
 if "eiendommer" not in st.session_state:
     st.session_state.eiendommer = {}
 
-# --------- Valg av eiendom ---------
+# --------- Velg eiendom ---------
 valg_liste = ["(Ny eiendom)"] + list(st.session_state.eiendommer.keys())
 valgt_navn = st.sidebar.selectbox("Velg eiendom", valg_liste)
 er_ny = valgt_navn == "(Ny eiendom)"
 data = st.session_state.eiendommer.get(valgt_navn, {}) if not er_ny else {}
 
-# --------- Inndatafelt ---------
+# --------- Inndata ---------
 navn = st.sidebar.text_input("Navn på eiendom", value=valgt_navn if not er_ny else "")
 finn_link = st.sidebar.text_input("Finn-lenke", value=data.get("finn", ""))
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=data.get("kjøpesum", 3000000.0), step=100000.0)
@@ -167,8 +166,12 @@ st.metric("Total investering", f"{int(total):,} kr")
 st.metric("Brutto yield", f"{(leie * 12 / total) * 100:.2f} %")
 st.metric("Netto yield", f"{((leie * 12 - drift) / total) * 100:.2f} %")
 
+# --------- Scrollbar rundt dataframe ---------
+st.markdown('<div class="scroll-container">', unsafe_allow_html=True)
 st.dataframe(df.head(60))
+st.markdown('</div>', unsafe_allow_html=True)
 
+# --------- Grafer ---------
 if vis_grafer:
     st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
     st.line_chart(df[["Renter", "Avdrag"]])
