@@ -74,13 +74,71 @@ rente = st.sidebar.number_input("Rente (%)", value=data.get("rente", 5.0))
 løpetid = st.sidebar.number_input("Løpetid (år)", value=data.get("løpetid", 25))
 avdragsfri = st.sidebar.number_input("Avdragsfri (år)", value=data.get("avdragsfri", 2))
 lånetype = st.sidebar.selectbox("Lånetype", ["Annuitetslån", "Serielån"], index=["Annuitetslån", "Serielån"].index(data.get("lånetype", "Annuitetslån")))
-eierform = st.sidebar.radio(
-    "Eierform", 
-    ["Privat", "AS"], 
-    index=["Privat", "AS"].index(data.get("eierform", "Privat"))
-)
+eierform = st.sidebar.radio("Eierform", ["Privat", "AS"], index=["Privat", "AS"].index(data.get("eierform", "Privat")))
+vis_grafer = st.sidebar.checkbox("Vis grafer", value=True)
 
+# --------- Lagre og slett ---------
+if st.sidebar.button("Lagre endringer"):
+    st.session_state.eiendommer[navn] = {
+        "finn": finn_link, "kjøpesum": kjøpesum, "leie": leie,
+        "lån": lån, "rente": rente, "løpetid": løpetid, "avdragsfri": avdragsfri,
+        "lånetype": lånetype, "eierform": eierform,
+        "riving": riving, "bad": bad, "kjøkken": kjøkken, "overflate": overflate,
+        "gulv": gulv, "rørlegger": rørlegger, "elektriker": elektriker, "utvendig": utvendig,
+        "forsikring": forsikring, "strøm": strøm, "kommunale": kommunale,
+        "internett": internett, "vedlikehold": vedlikehold
+    }
+    st.success(f"Eiendom '{navn}' lagret.")
+    st.experimental_rerun()
 
-    st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
-    st.line_chart(df[["Renter", "Avdrag"]])
-    st.line_chart(df["Restgjeld"])
+if not er_ny:
+    if st.sidebar.button("Slett eiendom"):
+        st.session_state.eiendommer.pop(valgt_navn, None)
+        st.success(f"Slettet '{valgt_navn}'.")
+        st.experimental_rerun()
+
+# --------- Kalkulasjonsfunksjon ---------
+def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierform):
+    n = int(løpetid * 12)
+    af = int(avdragsfri * 12)
+    r = rente / 100 / 12
+
+    if lånetype == "Annuitetslån" and r > 0:
+        terminbeløp = lån * (r * (1 + r)**(n - af)) / ((1 + r)**(n - af) - 1)
+    else:
+        terminbeløp = lån / (n - af) if (n - af) > 0 else 0
+
+    saldo = lån
+    restgjeld, avdrag, renter_liste, netto_cf, akk_cf = [], [], [], [], []
+    akk = 0
+
+    for m in range(n):
+        rente_mnd = saldo * r
+        if m < af:
+            avdrag_mnd = 0
+            termin = rente_mnd
+        elif lånetype == "Serielån":
+            avdrag_mnd = lån / (n - af)
+            termin = avdrag_mnd + rente_mnd
+        else:
+            avdrag_mnd = terminbeløp - rente_mnd
+            termin = terminbeløp
+
+        saldo -= avdrag_mnd
+        netto = leie - drift / 12 - termin
+        if eierform == "AS" and netto > 0:
+            netto *= (1 - 0.375)
+        akk += netto
+
+        restgjeld.append(saldo)
+        avdrag.append(avdrag_mnd)
+        renter_liste.append(rente_mnd)
+        netto_cf.append(netto)
+        akk_cf.append(akk)
+
+    df = pd.DataFrame({
+        "Måned": list(range(1, n + 1)),
+        "Restgjeld": restgjeld,
+        "Avdrag": avdrag,
+        "Renter": renter_liste,
+        "Netto cashf
