@@ -8,20 +8,24 @@ st.markdown("""
     <style>
     .scroll-container {
         max-height: 500px;
-        overflow-y: scroll;
+        overflow-y: auto;
     }
+
     .scroll-container::-webkit-scrollbar {
         width: 24px;
     }
+
     .scroll-container::-webkit-scrollbar-thumb {
         background-color: #888;
         border-radius: 12px;
     }
-    .scroll-container::-webkit-scrollbar-thumb:hover {
-        background-color: #555;
-    }
     </style>
 """, unsafe_allow_html=True)
+
+# Scrollbar rundt vanlig tabell
+st.markdown('<div class="scroll-container">', unsafe_allow_html=True)
+st.table(df.head(60))  # bruker vanlig HTML-tabell
+st.markdown('</div>', unsafe_allow_html=True)
 
 st.title("AMO Eiendom v48.5.6 – Lagre og slett fungerer riktig")
 
