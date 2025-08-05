@@ -11,7 +11,7 @@ st.markdown("""
     }
     ::-webkit-scrollbar-thumb {
         background-color: #888;
-        border-radius: 8px;
+        border-radius: 50px;
     }
     ::-webkit-scrollbar-thumb:hover {
         background-color: #555;
