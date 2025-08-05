@@ -91,13 +91,13 @@ if st.sidebar.button("Lagre endringer"):
         "internett": internett, "vedlikehold": vedlikehold
     }
     st.success(f"Eiendom '{navn}' lagret.")
-    st.experimental_rerun()
+    st.stop()
 
 if not er_ny:
     if st.sidebar.button("Slett eiendom"):
         st.session_state.eiendommer.pop(valgt_navn, None)
         st.success(f"Slettet '{valgt_navn}'.")
-        st.experimental_rerun()
+        st.stop()
 
 # --------- Kalkulasjonsfunksjon ---------
 def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierform):
@@ -138,12 +138,32 @@ def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierf
         netto_cf.append(netto)
         akk_cf.append(akk)
 
-df = pd.DataFrame({
-    "Måned": list(range(1, n + 1)),
-    "Restgjeld": restgjeld,
-    "Avdrag": avdrag,
-    "Renter": renter_liste,
-    "Netto cashflow": netto_cf,
-    "Akk. cashflow": akk_cf
-})
+    df = pd.DataFrame({
+        "Måned": list(range(1, n + 1)),
+        "Restgjeld": restgjeld,
+        "Avdrag": avdrag,
+        "Renter": renter_liste,
+        "Netto cashflow": netto_cf,
+        "Akk. cashflow": akk_cf
+    })
 
+    return df, akk
+
+# --------- Beregning og visning ---------
+total = kjøpesum + oppussing + kjøpesum * 0.025
+df, akk = beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierform)
+
+st.subheader(f"Resultater for: {navn}")
+if finn_link:
+    st.markdown(f"[Se Finn-annonse]({finn_link})", unsafe_allow_html=True)
+
+st.metric("Total investering", f"{int(total):,} kr")
+st.metric("Brutto yield", f"{(leie * 12 / total) * 100:.2f} %")
+st.metric("Netto yield", f"{((leie * 12 - drift) / total) * 100:.2f} %")
+
+st.dataframe(df.head(60))
+
+if vis_grafer:
+    st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
+    st.line_chart(df[["Renter", "Avdrag"]])
+    st.line_chart(df["Restgjeld"])
