@@ -5,30 +5,23 @@ import pandas as pd
 st.set_page_config(layout="wide")
 st.markdown("""
     <style>
-    .scroll-wrapper {
-        max-height: 500px;
-        overflow-y: auto;
-        border: 1px solid #ccc;
-        padding: 8px;
-        margin-top: 1rem;
+    /* Gjør scrollbaren mer synlig */
+    div[data-testid="stDataFrameScrollable"]::-webkit-scrollbar {
+        width: 16px;
     }
 
-    .scroll-wrapper::-webkit-scrollbar {
-        width: 24px;
+    div[data-testid="stDataFrameScrollable"]::-webkit-scrollbar-thumb {
+        background-color: #444;
+        border-radius: 8px;
     }
 
-    .scroll-wrapper::-webkit-scrollbar-thumb {
-        background: #888;
-        border-radius: 12px;
-    }
-
-    .scroll-wrapper::-webkit-scrollbar-thumb:hover {
-        background: #555;
+    div[data-testid="stDataFrameScrollable"]::-webkit-scrollbar-thumb:hover {
+        background-color: #222;
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("Eiendomskalkulator – med bred scrollbar ✅")
+st.title("Eiendomskalkulator – med synlig scrollbar")
 
 # ------------------ Input ------------------
 st.sidebar.header("Eiendomsinfo")
@@ -120,11 +113,9 @@ st.metric("Total investering", f"{int(total_investering):,} kr")
 st.metric("Brutto yield", f"{(leie * 12 / total_investering) * 100:.2f} %")
 st.metric("Netto yield", f"{((leie * 12 - drift) / total_investering) * 100:.2f} %")
 
-# ------------------ Scrollbar med HTML-tabell ------------------
-st.subheader("Kontantstrøm (første 60 måneder) med bred scrollbar")
-
-html_table = df.head(60).to_html(index=False)
-st.markdown(f'<div class="scroll-wrapper">{html_table}</div>', unsafe_allow_html=True)
+# ------------------ Scrollbar (synlig) med st.dataframe ------------------
+st.subheader("Kontantstrøm (første 60 måneder)")
+st.dataframe(df.head(60), use_container_width=True, height=500)
 
 # ------------------ Grafer ------------------
 st.subheader("Grafer")
