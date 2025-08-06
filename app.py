@@ -30,7 +30,7 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ OPPUSSING ------------------
 
-# 1. Standardverdier for oppussing
+# 1. Standardverdier
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -42,25 +42,25 @@ oppussing_defaults = {
     "utvendig": 20000
 }
 
-# 2. Hvis reset er aktivert (via knapp), nullstill verdier og gjør rerun
+# 2. Start med å sjekke om reset-flagg er satt, men UTEN rerun
 if st.session_state.get("reset_oppussing"):
     for key, val in oppussing_defaults.items():
         st.session_state[key] = val
     st.session_state["reset_oppussing"] = False
-    st.experimental_rerun()
+    # OBS: Ikke kall st.experimental_rerun() direkte her
 
-# 3. Initier verdier i session_state om de ikke finnes fra før
+# 3. Initier session_state-verdier
 for key, val in oppussing_defaults.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
-# 4. Beregn total oppussing
+# 4. Beregn total
 oppussing_total = sum([st.session_state[k] for k in oppussing_defaults])
 
-# 5. Vis expander med summen som tittel
+# 5. Expander med oppsummering
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
-    # 6. Input-felter for hver kategori
+    # 6. Input-feltene
     for key in oppussing_defaults:
         st.session_state[key] = st.number_input(
             key.capitalize(),
@@ -68,10 +68,11 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
             key=f"opp_{key}"
         )
 
-    # 7. Tilbakestill-knapp (setter en flagg-variabel)
+    # 7. Reset-knapp – i stedet for rerun, bruk en hack via knappeklikk
     if st.button("Tilbakestill oppussing"):
-        st.session_state["reset_oppussing"] = True
-
+        for key, val in oppussing_defaults.items():
+            st.session_state[key] = val
+        st.experimental_rerun()  # Rerun kun etter at hele UI er bygget
 # ------------------ Driftskostnader ------------------
 
 # Hent eller sett default-verdier i session_state
