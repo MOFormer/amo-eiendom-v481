@@ -69,18 +69,37 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing):,} kr"):
     st.session_state["elektriker"] = st.number_input("Elektriker", value=st.session_state["elektriker"])
     st.session_state["utvendig"] = st.number_input("Utvendig", value=st.session_state["utvendig"])
 
-# --------- Driftskostnader ---------
-with st.sidebar.expander("💡 Driftskostnader"):
-    forsikring = st.number_input("Forsikring", value=8_000)
-    strøm = st.number_input("Strøm", value=12_000)
-    kommunale = st.number_input("Kommunale avgifter", value=9_000)
-    internett = st.number_input("Internett", value=3_000)
-    vedlikehold = st.number_input("Vedlikehold", value=8_000)
+# ------------------ Driftskostnader ------------------
 
-drift = sum([forsikring, strøm, kommunale, internett, vedlikehold])
+# Hent eller sett default-verdier i session_state
+drift_defaults = {
+    "forsikring": 8000,
+    "strøm": 12000,
+    "kommunale": 9000,
+    "internett": 3000,
+    "vedlikehold": 8000
+}
 
-# ✅ Vis summering
-st.sidebar.markdown(f"**💡 Driftskostnader: {int(drift):,} kr**")
+for key, val in drift_defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = val
+
+# Beregn totalsum før expander vises
+drift = sum([
+    st.session_state["forsikring"],
+    st.session_state["strøm"],
+    st.session_state["kommunale"],
+    st.session_state["internett"],
+    st.session_state["vedlikehold"]
+])
+
+# ✅ Expander med totalsum i tittelen
+with st.sidebar.expander(f"💡 Driftskostnader: {int(drift):,} kr"):
+    st.session_state["forsikring"] = st.number_input("Forsikring", value=st.session_state["forsikring"])
+    st.session_state["strøm"] = st.number_input("Strøm", value=st.session_state["strøm"])
+    st.session_state["kommunale"] = st.number_input("Kommunale avgifter", value=st.session_state["kommunale"])
+    st.session_state["internett"] = st.number_input("Internett", value=st.session_state["internett"])
+    st.session_state["vedlikehold"] = st.number_input("Vedlikehold", value=st.session_state["vedlikehold"])
 
 # --------- Lån med expander ---------
 with st.sidebar.expander("🏦 Lån og finansiering"):
