@@ -124,8 +124,8 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
     drift_total = 0
     for key, default in driftskostnader_defaults.items():
         widget_key = f"drift_{key}"
-            if widget_key not in st.session_state:
-                st.session_state[widget_key] = default
+if widget_key not in st.session_state:
+    st.session_state[widget_key] = default
 
     val = st.number_input(
         label=key.capitalize(),
