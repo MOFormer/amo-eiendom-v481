@@ -261,7 +261,7 @@ df, akk = beregn_lån(
     st.session_state["avdragsfri"],
     st.session_state["lånetype"],
     leie,
-    drift,
+    drift_total,
     st.session_state["eierform"]
 )
 
