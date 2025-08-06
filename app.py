@@ -86,10 +86,11 @@ with st.sidebar.expander("🔨 Oppussing"):
     oppussing_total = sum(st.session_state["oppussing_values"].values())
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
-    if st.button("Tilbakestill oppussing", key="btn_reset_oppussing"):
+if st.button("Tilbakestill oppussing", key="btn_reset_oppussing"):
         for key in oppussing_defaults:
+            st.session_state[f"input_oppussing_{key}"] = 0
             st.session_state["oppussing_values"][key] = 0
-        st.experimental_rerun()  # oppdater visning umiddelbart
+        st.rerun()  # Ny anbefalt metode i nyere versjoner av Streamlit
 
 # --------------------------
 # Kjøpesum og kjøpskostnader
