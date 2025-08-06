@@ -105,10 +105,6 @@ st.metric("Total investering", f"{int(total_investering):,} kr")
 # Driftskostnader standardverdier
 # --------------------------
 
-
-# --------------------------
-# Standardverdier
-# --------------------------
 driftskostnader_defaults = {
     "forsikring": 8000,
     "strøm": 12000,
@@ -148,6 +144,7 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
             step=1000,
             format="%d"
         )
+        st.session_state[widget_key] = val  # 🔄 Lagrer eksplisitt
         drift_total += val  # Summering
 
     # Totalsum i boksen
