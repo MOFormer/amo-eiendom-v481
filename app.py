@@ -46,33 +46,30 @@ oppussing_defaults = {
 if "oppussing_reset_count" not in st.session_state:
     st.session_state["oppussing_reset_count"] = 0
 
-# --- Hvis vi trenger verdier lagret per reset ---
-if "oppussing_values" not in st.session_state:
-    st.session_state["oppussing_values"] = oppussing_defaults.copy()
-
-# --- Kalkuler total oppussing ---
-oppussing_total = 0
+# --- Init values (ikke nødvendig å huske tidligere verdier)
+oppussing_values = {}
 
 # ------------------ OPPUSSING UI ------------------
 
-
-# --- UI --- 
-with st.sidebar.expander(f"🔨 Oppussing: {int(sum(st.session_state['oppussing_values'].values())):,} kr"):
+# --- UI ---
+with st.sidebar.expander(
+    f"🔨 Oppussing: {int(sum(st.session_state.get(f'opp_{k}_{st.session_state.oppussing_reset_count}', v) for k, v in oppussing_defaults.items())):,} kr"
+):
 
     for key, default in oppussing_defaults.items():
-        field_key = f"opp_{key}_{st.session_state['oppussing_reset_count']}"
+        unique_key = f"opp_{key}_{st.session_state['oppussing_reset_count']}"
         val = st.number_input(
             label=key.capitalize(),
-            value=default if st.session_state["oppussing_reset_count"] > 0 else st.session_state["oppussing_values"].get(key, default),
-            key=field_key
+            value=0 if st.session_state["oppussing_reset_count"] > 0 else default,
+            key=unique_key
         )
-        st.session_state["oppussing_values"][key] = val
-        oppussing_total += val
+        oppussing_values[key] = val
 
     if st.button("Tilbakestill oppussing"):
-        # Øker reset count → tvinger nye felt
-        st.session_state["oppussing_values"] = {key: 0 for key in oppussing_defaults}
         st.session_state["oppussing_reset_count"] += 1
+
+# --- Nå er verdiene tilgjengelig for videre bruk:
+oppussing_total = sum(oppussing_values.values())
 
 
 # ------------------ Driftskostnader ------------------
