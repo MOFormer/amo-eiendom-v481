@@ -30,7 +30,7 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ Oppussing ------------------
 
-# --- Standardverdier for oppussing ---
+# --- Oppussing standardverdier ---
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -42,30 +42,40 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# --- Tell hvor mange ganger vi har "resettet" ---
-if "opp_reset_count" not in st.session_state:
-    st.session_state["opp_reset_count"] = 0
+# --- Reset status per felt ---
+if "oppussing_values" not in st.session_state:
+    st.session_state["oppussing_values"] = oppussing_defaults.copy()
+
+# --- Reset trigger ---
+if "oppussing_reset_trigger" not in st.session_state:
+    st.session_state["oppussing_reset_trigger"] = False
+
+# --- Utfør reset om trigger er aktiv ---
+if st.session_state["oppussing_reset_trigger"]:
+    for key in oppussing_defaults:
+        st.session_state["oppussing_values"][key] = 0
+    st.session_state["oppussing_reset_trigger"] = False
 
 # ------------------ OPPUSSING UI ------------------
 
-# --- Bruk key som inkluderer reset_count for å tvinge refresh ---
-oppussing_total = 0
+# --- Visning i sidebar ---
+with st.sidebar.expander("🔨 Oppussing"):
 
-with st.sidebar.expander(f"🔨 Oppussing"):
-
-    for key, val in oppussing_defaults.items():
-        widget_key = f"opp_{key}_{st.session_state.opp_reset_count}"
-        current_val = st.number_input(
+    total = 0
+    for key in oppussing_defaults:
+        val = st.number_input(
             label=key.capitalize(),
-            value=val,
-            key=widget_key
+            value=st.session_state["oppussing_values"][key],
+            key=f"opp_{key}"
         )
-        oppussing_total += current_val
+        # Oppdater lagrede verdier
+        st.session_state["oppussing_values"][key] = val
+        total += val
 
-    st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
+    st.markdown(f"**Totalt: {int(total):,} kr**")
 
     if st.button("Tilbakestill oppussing"):
-        st.session_state["opp_reset_count"] += 1  # ← ny key = ny input bygges
+        st.session_state["oppussing_reset_trigger"] = True
 
 
 # ------------------ Driftskostnader ------------------
