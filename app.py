@@ -122,16 +122,19 @@ driftskostnader_defaults = {
 # --------------------------
 with st.sidebar.expander("📈 Driftskostnader", expanded=True):
     drift_total = 0
-    for key in driftskostnader_defaults:
-        widget_key = f"drift_{key}"
-        val = st.number_input(
-            label=key.capitalize(),
-            value=st.session_state[widget_key],
-            key=widget_key,
-            step=1000,
-            format="%d"
-        )
-        drift_total += val
+    for key, default in driftskostnader_defaults.items():
+    widget_key = f"drift_{key}"
+    if widget_key not in st.session_state:
+        st.session_state[widget_key] = default
+
+    val = st.number_input(
+        label=key.capitalize(),
+        value=st.session_state[widget_key],
+        key=widget_key,
+        step=1000,
+        format="%d"
+    )
+    drift_total += val
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
