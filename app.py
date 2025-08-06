@@ -63,9 +63,9 @@ for key, default in oppussing_defaults.items():
 with st.sidebar.expander("🔨 Oppussing", expanded=True):
     total = 0
     for key, default in oppussing_defaults.items():
-    widget_key = f"opp_{key}"
-    if widget_key not in st.session_state or st.session_state["reset_oppussing_triggered"]:
-        st.session_state[widget_key] = 0 if st.session_state["reset_oppussing_triggered"] else default
+        widget_key = f"opp_{key}"
+        if widget_key not in st.session_state or st.session_state["reset_oppussing_triggered"]:
+            st.session_state[widget_key] = 0 if st.session_state["reset_oppussing_triggered"] else default
 
 # Nullstill flagget så det ikke fortsetter å nullstille etter første run
 if st.session_state["reset_oppussing_triggered"]:
