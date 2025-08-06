@@ -74,8 +74,7 @@ if "oppussing_values" not in st.session_state:
 # Kalkuler totalsum først (før ekspander!)
 oppussing_total = sum(st.session_state["oppussing_values"].values())
 
-with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
-    # Vis inputfelter
+with st.sidebar.expander("🔨 Oppussing"):
     for key in oppussing_defaults:
         st.session_state["oppussing_values"][key] = st.number_input(
             label=key.capitalize(),
@@ -83,14 +82,14 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
             key=f"input_oppussing_{key}"
         )
 
-    # Kalkuler totalsum
+    # ✅ Summer etter at input-feltene er lest
     oppussing_total = sum(st.session_state["oppussing_values"].values())
-    
+    st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
-    # Reset-knapp
     if st.button("Tilbakestill oppussing", key="btn_reset_oppussing"):
         for key in oppussing_defaults:
             st.session_state["oppussing_values"][key] = 0
+        st.experimental_rerun()  # oppdater visning umiddelbart
 
 # --------------------------
 # Kjøpesum og kjøpskostnader
