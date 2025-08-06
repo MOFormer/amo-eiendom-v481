@@ -50,18 +50,21 @@ for key, val in oppussing_defaults.items():
 # Beregn total oppussing før expander
 oppussing = sum([st.session_state[k] for k in oppussing_defaults])
 
-# Vis expander med totalsum
+# ✅ Expander med totalsum
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing):,} kr"):
 
-    # Input-feltene
     for key in oppussing_defaults:
-        st.session_state[key] = st.number_input(key.capitalize(), value=st.session_state[key])
+        st.session_state[key] = st.number_input(
+            key.capitalize(),
+            value=st.session_state[key],
+            key=f"opp_{key}"
+        )
 
-    # 🔄 Reset-knapp
-  if st.button("Tilbakestill oppussing"):
-    for key, val in oppussing_defaults.items():
-        st.session_state[key] = val
-    # st.experimental_rerun()  ← kan kommenteres ut ved behov
+    # 🔁 Reset-knapp – korrekt innrykket
+    if st.button("Tilbakestill oppussing"):
+        for key, val in oppussing_defaults.items():
+            st.session_state[key] = val
+        st.experimental_rerun()
 
 # ------------------ Driftskostnader ------------------
 
