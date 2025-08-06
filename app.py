@@ -104,14 +104,47 @@ with st.sidebar.expander(f"💡 Driftskostnader: {int(drift):,} kr"):
     st.session_state["internett"] = st.number_input("Internett", value=st.session_state["internett"])
     st.session_state["vedlikehold"] = st.number_input("Vedlikehold", value=st.session_state["vedlikehold"])
 
-# --------- Lån med expander ---------
-with st.sidebar.expander("🏦 Lån og finansiering"):
-    lån = st.number_input("Lånebeløp", value=2_700_000)
-    rente = st.number_input("Rente (%)", value=5.0)
-    løpetid = st.number_input("Løpetid (år)", value=25)
-    avdragsfri = st.number_input("Avdragsfri (år)", value=2)
-    lånetype = st.selectbox("Lånetype", ["Annuitetslån", "Serielån"])
-    eierform = st.radio("Eierform", ["Privat", "AS"])
+# ------------------ Lån og finansiering ------------------
+
+# Sett standardverdier i session_state
+lån_defaults = {
+    "egenkapital": 300000,
+    "rente": 5.0,
+    "løpetid": 25,
+    "avdragsfri": 2,
+    "lånetype": "Annuitetslån",
+    "eierform": "Privat"
+}
+
+for key, val in lån_defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = val
+
+# Beregn lånebeløp fra kjøpesum og oppussing (hentet fra tidligere i appen)
+kjøpskostnader = st.session_state.get("kjøpskostnader", 0)
+total_investering = st.session_state.get("total_investering", 3_000_000 + 500_000 + 75_000)  # fallback
+lånebeløp = total_investering - st.session_state["egenkapital"]
+
+# Lagre beregnet lånebeløp
+st.session_state["lån"] = lånebeløp
+
+# ✅ Expander med lånebeløp i tittel
+with st.sidebar.expander(f"🏦 Lån: {int(st.session_state['lån']):,} kr"):
+
+    st.session_state["egenkapital"] = st.number_input(
+        "Egenkapital", value=st.session_state["egenkapital"], min_value=0
+    )
+
+    # Oppdater lånebeløp når egenkapital endres
+    st.session_state["lån"] = total_investering - st.session_state["egenkapital"]
+
+    st.session_state["rente"] = st.number_input("Rente (%)", value=st.session_state["rente"], step=0.1)
+    st.session_state["løpetid"] = st.number_input("Løpetid (år)", value=st.session_state["løpetid"], step=1)
+    st.session_state["avdragsfri"] = st.number_input("Avdragsfri (år)", value=st.session_state["avdragsfri"], step=1)
+    st.session_state["lånetype"] = st.selectbox("Lånetype", ["Annuitetslån", "Serielån"], 
+                                                index=["Annuitetslån", "Serielån"].index(st.session_state["lånetype"]))
+    st.session_state["eierform"] = st.radio("Eierform", ["Privat", "AS"], 
+                                             index=["Privat", "AS"].index(st.session_state["eierform"]))
 
 # ------------------ Kalkulasjon ------------------
 def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierform):
