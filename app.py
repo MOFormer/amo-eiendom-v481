@@ -33,6 +33,8 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ Oppussing ------------------
 
+import streamlit as st
+
 # --------------------------
 # Oppussing standardverdier
 # --------------------------
@@ -48,43 +50,34 @@ oppussing_defaults = {
 }
 
 # --------------------------
-# Init input-verdier i session_state og reset trigger
+# Init input-verdier i session_state
 # --------------------------
-if "reset_oppussing_triggered" not in st.session_state:
-    st.session_state["reset_oppussing_triggered"] = False
-
 for key, default in oppussing_defaults.items():
     widget_key = f"opp_{key}"
-    if widget_key not in st.session_state or st.session_state["reset_oppussing_triggered"]:
-        st.session_state[widget_key] = 0 if st.session_state["reset_oppussing_triggered"] else default
-
-# Nullstill flagget etter reset
-if st.session_state["reset_oppussing_triggered"]:
-    st.session_state["reset_oppussing_triggered"] = False
-
-    
-# ------------------ OPPUSSING UI ------------------
+    if widget_key not in st.session_state:
+        st.session_state[widget_key] = default
 
 # --------------------------
 # Oppussing UI i sidebar
 # --------------------------
-with st.sidebar.expander("📈 Driftskostnader", expanded=True):
-    drift_total = 0
-    for key, default in driftskostnader_defaults.items():
-        widget_key = f"drift_input_{key}"  # <- endret
+with st.sidebar.expander("🔨 Oppussing", expanded=True):
+    total = 0
+    for key in oppussing_defaults:
+        widget_key = f"opp_{key}"
         val = st.number_input(
             label=key.capitalize(),
-            value=st.session_state.get(widget_key, default),
+            value=st.session_state[widget_key],
             key=widget_key,
-            step=1000,
-            format="%d"
+            step=1000
         )
-        drift_total += val
+        total += val
 
-    st.markdown(f"**Totalt: {int(drift_total):,} kr**")
+    st.markdown(f"**Totalt: {int(total):,} kr**")
 
-    if st.button("Tilbakestill driftskostnader", key="reset_drift_btn"):
-        st.session_state["reset_drift_triggered"] = True
+    if st.button("Tilbakestill oppussing", key="reset_oppussing"):
+        for key in oppussing_defaults:
+            st.session_state[f"opp_{key}"] = 0
+        st.rerun()
 
 # --------------------------
 # Kjøpesum og kjøpskostnader
@@ -100,30 +93,6 @@ total_investering = kjøpesum + oppussing_total + kjøpskostnader
 
 st.subheader("✨ Resultat")
 st.metric("Total investering", f"{int(total_investering):,} kr")
-
-# 1. Definer standardverdier først
-driftskostnader_defaults = {
-    "forsikring": 8000,
-    "strøm": 12000,
-    "kommunale avgifter": 9000,
-    "internett": 3000,
-    "vedlikehold": 8000,
-}
-
-# 2. Deretter: Init reset-trigger FØR bruk
-if "reset_drift_triggered" not in st.session_state:
-    st.session_state["reset_drift_triggered"] = False
-
-# 3. Så: Init inputverdier eller reset
-for key, default in driftskostnader_defaults.items():
-    widget_key = f"drift_{key}"
-    if widget_key not in st.session_state or st.session_state["reset_drift_triggered"]:
-        st.session_state[widget_key] = 0 if st.session_state["reset_drift_triggered"] else default
-
-# 4. Nullstill flagget etter reset
-if st.session_state["reset_drift_triggered"]:
-    st.session_state["reset_drift_triggered"] = False
-
 # --------------------------
 # Driftskostnader UI
 # --------------------------
