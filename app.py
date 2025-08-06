@@ -129,10 +129,10 @@ if st.session_state["reset_drift_triggered"]:
     st.experimental_rerun()
 
 # --------------------------
-# ✅ Driftskostnader UI
+# Driftskostnader UI (samme struktur som oppussing)
 # --------------------------
-with st.sidebar.expander(f"📈 Driftskostnader", expanded=True):
-    drift_total = 0
+drift_total = 0
+with st.sidebar.expander("📈 Driftskostnader", expanded=True):
     for key, default in driftskostnader_defaults.items():
         widget_key = f"drift_{key}"
         val = st.number_input(
@@ -142,12 +142,17 @@ with st.sidebar.expander(f"📈 Driftskostnader", expanded=True):
             step=1000,
             format="%d"
         )
+        st.session_state[widget_key] = val  # 🔄 Sørg for lagring
         drift_total += val
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
-    if st.button("Tilbakestill driftskostnader", key="reset_drift_btn"):
-        st.session_state["reset_drift_triggered"] = True
+    if st.button("Tilbakestill driftskostnader", key="reset_drift"):
+        for key in driftskostnader_defaults:
+            widget_key = f"drift_{key}"
+            if widget_key in st.session_state:
+                del st.session_state[widget_key]
+        st.experimental_rerun()
         
 # ------------------ Lån og finansiering ------------------
 
