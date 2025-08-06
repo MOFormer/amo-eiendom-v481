@@ -30,7 +30,6 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ OPPUSSING ------------------
 
-# 1. Standardverdier
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -42,40 +41,34 @@ oppussing_defaults = {
     "utvendig": 20000
 }
 
-# 2. Start med å sjekke om reset-flagg er satt, men UTEN rerun
-if st.session_state.get("reset_oppussing"):
-    for key, val in oppussing_defaults.items():
-        st.session_state[key] = val
-    st.session_state["reset_oppussing"] = False
-    # OBS: Ikke kall st.experimental_rerun() direkte her
-
-# 3. Initier session_state-verdier
+# Initier session_state ved førstegangs kjøring
 for key, val in oppussing_defaults.items():
-    if key not in st.session_state:
-        st.session_state[key] = val
+    if f"opp_{key}" not in st.session_state:
+        st.session_state[f"opp_{key}"] = val
 
-# 4. Beregn total
-oppussing_total = sum([st.session_state[k] for k in oppussing_defaults])
+# Beregn totalsum fra gjeldende verdier
+oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
 
-# 5. Expander med oppsummering
+# Expander-boks med summen i tittelen
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
-    # 6. Input-feltene
     for key in oppussing_defaults:
-        st.session_state[key] = st.number_input(
+        st.number_input(
             key.capitalize(),
-            value=st.session_state[key],
+            value=st.session_state[f"opp_{key}"],
             key=f"opp_{key}"
         )
 
-    # 7. Reset-knapp – i stedet for rerun, bruk en hack via knappeklikk
     if st.button("Tilbakestill oppussing"):
-        for key, val in oppussing_defaults.items():
-            st.session_state[key] = val
-       # 🔁 Trygg rerun til slutt i appen
-    if st.session_state.get("rerun_trigger"):
-        st.session_state["rerun_trigger"] = False
-        st.experimental_rerun() 
+        st.session_state["reset_oppussing"] = True
+        
+# 🔁 Utfør rerun hvis reset-flagg er satt
+if st.session_state.get("reset_oppussing"):
+    for key, val in oppussing_defaults.items():
+        st.session_state[f"opp_{key}"] = val
+    st.session_state["reset_oppussing"] = False
+    st.experimental_rerun()
+
 # ------------------ Driftskostnader ------------------
 
 # Hent eller sett default-verdier i session_state
