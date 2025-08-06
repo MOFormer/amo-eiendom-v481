@@ -138,7 +138,7 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
-    if st.button("Tilbakestill driftskostnader", key="reset_drift"):
+    if st.button("Tilbakestill driftskostnader", key="reset_drift_total"):
         for key in driftskostnader_defaults:
             st.session_state[f"drift_{key}"] = driftskostnader_defaults[key]
         st.rerun()
