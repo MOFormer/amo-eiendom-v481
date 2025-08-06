@@ -29,22 +29,15 @@ kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # --------- Oppussing ---------
-with st.sidebar.expander("🔨 Oppussing"):
-    riving = st.number_input("Riving", value=20_000)
-    bad = st.number_input("Bad", value=120_000)
-    kjøkken = st.number_input("Kjøkken", value=100_000)
-    overflate = st.number_input("Overflate", value=30_000)
-    gulv = st.number_input("Gulv og lister", value=40_000)
-    rørlegger = st.number_input("Rørlegger", value=25_000)
-    elektriker = st.number_input("Elektriker", value=30_000)
-    utvendig = st.number_input("Utvendig", value=20_000)
-
-    # ✅ SUM inn i boksen – øverst
-    oppussing = sum([
-        riving, bad, kjøkken, overflate,
-        gulv, rørlegger, elektriker, utvendig
-    ])
-    st.markdown(f"**Totalt: {int(oppussing):,} kr**")
+with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing):,} kr"):
+    riving = st.number_input("Riving", value=_riving, key="x1")
+    bad = st.number_input("Bad", value=_bad, key="x2")
+    kjøkken = st.number_input("Kjøkken", value=_kjøkken, key="x3")
+    overflate = st.number_input("Overflate", value=_overflate, key="x4")
+    gulv = st.number_input("Gulv/lister", value=_gulv, key="x5")
+    rørlegger = st.number_input("Rørlegger", value=_rør, key="x6")
+    elektriker = st.number_input("Elektriker", value=_el, key="x7")
+    utvendig = st.number_input("Utvendig", value=_utv, key="x8")
 
 # ✅ Vis oppsummering etterpå
 st.sidebar.markdown(f"**🔨 Oppussing: {int(oppussing):,} kr**")
