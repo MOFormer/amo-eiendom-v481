@@ -28,9 +28,26 @@ st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
-# ------------------ Oppussing ------------------
+# ------------------ OPPUSSING ------------------
 
-# Standardverdier
+# 🔁 Reset-håndtering først (hvis bruker trykket "Tilbakestill oppussing")
+if st.session_state.get("reset_oppussing"):
+    for key, val in {
+        "riving": 20000,
+        "bad": 120000,
+        "kjøkken": 100000,
+        "overflate": 30000,
+        "gulv": 40000,
+        "rørlegger": 25000,
+        "elektriker": 30000,
+        "utvendig": 20000
+    }.items():
+        st.session_state[key] = val
+
+    st.session_state["reset_oppussing"] = False
+    st.experimental_rerun()
+
+# 📌 Standardverdier
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -42,29 +59,26 @@ oppussing_defaults = {
     "utvendig": 20000
 }
 
-# Initier i session_state hvis ikke finnes
+# 📥 Initier session_state om nødvendig
 for key, val in oppussing_defaults.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
-# Beregn total oppussing før expander
-oppussing = sum([st.session_state[k] for k in oppussing_defaults])
+# 🧮 Beregn totalsum før visning
+oppussing_total = sum([st.session_state[k] for k in oppussing_defaults])
 
-# ✅ Expander med totalsum
-with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing):,} kr"):
+# 🧱 Vis expander med total i tittelen
+with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
+    # Inputfeltene
     for key in oppussing_defaults:
         st.session_state[key] = st.number_input(
-            key.capitalize(),
-            value=st.session_state[key],
-            key=f"opp_{key}"
+            key.capitalize(), value=st.session_state[key], key=f"opp_{key}"
         )
 
-    # 🔁 Reset-knapp – korrekt innrykket
+    # 🔁 Reset-knapp med trygg mellomlagring
     if st.button("Tilbakestill oppussing"):
-        for key, val in oppussing_defaults.items():
-            st.session_state[key] = val
-        st.experimental_rerun()
+        st.session_state["reset_oppussing"] = True
 
 # ------------------ Driftskostnader ------------------
 
