@@ -42,22 +42,30 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# --- Reset status per felt ---
+# --- Init oppussing-verdier ---
 if "oppussing_values" not in st.session_state:
     st.session_state["oppussing_values"] = oppussing_defaults.copy()
 
-# --- Utfør reset hvis trigger er aktiv (før UI bygges) ---
-if st.session_state.get("oppussing_reset_trigger", False):
+# --- Reset-trigger init
+if "oppussing_reset_trigger" not in st.session_state:
+    st.session_state["oppussing_reset_trigger"] = False
+
+# --- Flagg for om vi skal kjøre rerun
+do_rerun = False
+
+# --- Utfør reset hvis trigger er aktiv
+if st.session_state["oppussing_reset_trigger"]:
     st.session_state["oppussing_values"] = {key: 0 for key in oppussing_defaults}
     st.session_state["oppussing_reset_trigger"] = False
-    st.experimental_rerun()  # ✅ Trygt her
+    do_rerun = True  # ✅ Vi ber om rerun etter UI
 
-# --- Kalkuler total ---
+# --- Kalkuler totalsum
 oppussing_total = sum(st.session_state["oppussing_values"].values())
 
 # ------------------ OPPUSSING UI ------------------
 
-# --- Oppussing UI i sidebar ---
+
+# --- UI
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
     for key in oppussing_defaults:
         val = st.number_input(
@@ -69,6 +77,10 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     if st.button("Tilbakestill oppussing"):
         st.session_state["oppussing_reset_trigger"] = True
+
+# --- Etter UI: trygg rerun
+if do_rerun:
+    st.experimental_rerun()
 
 
 # ------------------ Driftskostnader ------------------
