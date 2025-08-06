@@ -43,6 +43,7 @@ oppussing = sum([
     riving, bad, kjøkken, overflate,
     gulv, rørlegger, elektriker, utvendig
 ])
+st.sidebar.markdown(f"**Total oppussing:** {int(oppussing):,} kr")
 
 # --------- Driftskostnader med expander ---------
 with st.sidebar.expander("💡 Driftskostnader per år"):
