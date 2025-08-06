@@ -30,29 +30,44 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ Oppussing ------------------
 
-# Midlertidige inputs for å kunne beregne summen først
-_riving = st.sidebar.number_input("Riving", value=20000, key="r1_temp", label_visibility="collapsed")
-_bad = st.sidebar.number_input("Bad", value=120000, key="r2_temp", label_visibility="collapsed")
-_kjøkken = st.sidebar.number_input("Kjøkken", value=100000, key="r3_temp", label_visibility="collapsed")
-_overflate = st.sidebar.number_input("Overflate", value=30000, key="r4_temp", label_visibility="collapsed")
-_gulv = st.sidebar.number_input("Gulv/lister", value=40000, key="r5_temp", label_visibility="collapsed")
-_rør = st.sidebar.number_input("Rørlegger", value=25000, key="r6_temp", label_visibility="collapsed")
-_el = st.sidebar.number_input("Elektriker", value=30000, key="r7_temp", label_visibility="collapsed")
-_utv = st.sidebar.number_input("Utvendig", value=20000, key="r8_temp", label_visibility="collapsed")
+# Hent eller sett default-verdier direkte i session_state (usynlig for brukeren)
+defaults = {
+    "riving": 20000,
+    "bad": 120000,
+    "kjøkken": 100000,
+    "overflate": 30000,
+    "gulv": 40000,
+    "rørlegger": 25000,
+    "elektriker": 30000,
+    "utvendig": 20000
+}
 
-# Beregn totalsum før expander
-oppussing = sum([_riving, _bad, _kjøkken, _overflate, _gulv, _rør, _el, _utv])
+for key, val in defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = val
 
-# Nå vis expander med riktig tittel
+# Beregn totalen FØR expander vises
+oppussing = sum([
+    st.session_state["riving"],
+    st.session_state["bad"],
+    st.session_state["kjøkken"],
+    st.session_state["overflate"],
+    st.session_state["gulv"],
+    st.session_state["rørlegger"],
+    st.session_state["elektriker"],
+    st.session_state["utvendig"]
+])
+
+# ✅ Nå vises bare expander – og summen er i tittelen!
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing):,} kr"):
-    riving = st.number_input("Riving", value=_riving, key="r1")
-    bad = st.number_input("Bad", value=_bad, key="r2")
-    kjøkken = st.number_input("Kjøkken", value=_kjøkken, key="r3")
-    overflate = st.number_input("Overflate", value=_overflate, key="r4")
-    gulv = st.number_input("Gulv/lister", value=_gulv, key="r5")
-    rørlegger = st.number_input("Rørlegger", value=_rør, key="r6")
-    elektriker = st.number_input("Elektriker", value=_el, key="r7")
-    utvendig = st.number_input("Utvendig", value=_utv, key="r8")
+    st.session_state["riving"] = st.number_input("Riving", value=st.session_state["riving"])
+    st.session_state["bad"] = st.number_input("Bad", value=st.session_state["bad"])
+    st.session_state["kjøkken"] = st.number_input("Kjøkken", value=st.session_state["kjøkken"])
+    st.session_state["overflate"] = st.number_input("Overflate", value=st.session_state["overflate"])
+    st.session_state["gulv"] = st.number_input("Gulv/lister", value=st.session_state["gulv"])
+    st.session_state["rørlegger"] = st.number_input("Rørlegger", value=st.session_state["rørlegger"])
+    st.session_state["elektriker"] = st.number_input("Elektriker", value=st.session_state["elektriker"])
+    st.session_state["utvendig"] = st.number_input("Utvendig", value=st.session_state["utvendig"])
 
 # --------- Driftskostnader ---------
 with st.sidebar.expander("💡 Driftskostnader"):
