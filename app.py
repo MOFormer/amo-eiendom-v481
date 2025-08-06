@@ -28,7 +28,8 @@ st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
-# ------------------ OPPUSSING RESET LOGIKK ------------------
+# ------------------ OPPUSSING RESET ------------------
+import streamlit as st
 
 oppussing_defaults = {
     "riving": 20000,
@@ -41,27 +42,29 @@ oppussing_defaults = {
     "utvendig": 20000
 }
 
-# Håndter reset FØR widgets vises
+# 🔹 Render noe først, så det ikke krasjer
+st.title("AMO Eiendom")
+
+# 🔁 Trygg rerun etter UI start
 if st.session_state.get("reset_oppussing"):
     for key, val in oppussing_defaults.items():
         st.session_state[f"opp_{key}"] = val
     st.session_state["reset_oppussing"] = False
     st.experimental_rerun()
 
-# ------------------ OPPUSSING VISNING ------------------
+# ------------------ OPPUSSING UI ------------------
 
-# Initier standardverdier hvis de ikke finnes i session_state
+# Initier alle verdier hvis mangler
 for key, val in oppussing_defaults.items():
     if f"opp_{key}" not in st.session_state:
         st.session_state[f"opp_{key}"] = val
 
-# Beregn totalsum
+# Kalkuler total oppussing
 oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
 
-# Vis som expander i sidebaren
+# Vis input-felter med total
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
-    # Inputfeltene
     for key in oppussing_defaults:
         st.number_input(
             key.capitalize(),
@@ -69,7 +72,6 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
             key=f"opp_{key}"
         )
 
-    # Tilbakestill-knapp
     if st.button("Tilbakestill oppussing"):
         st.session_state["reset_oppussing"] = True
 
