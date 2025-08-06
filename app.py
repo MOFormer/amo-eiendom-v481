@@ -120,6 +120,9 @@ driftskostnader_defaults = {
 # --------------------------
 # Driftskostnader UI (samme struktur som oppussing)
 # --------------------------
+
+        
+# ------------------ Lån og finansiering ------------------
 drift_total = 0
 with st.sidebar.expander("📈 Driftskostnader", expanded=True):
     for key, default in driftskostnader_defaults.items():
@@ -131,7 +134,6 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
             step=1000,
             format="%d"
         )
-        st.session_state[widget_key] = val  # 🔄 Sørg for lagring
         drift_total += val
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
@@ -142,9 +144,6 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
             if widget_key in st.session_state:
                 del st.session_state[widget_key]
         st.experimental_rerun()
-        
-# ------------------ Lån og finansiering ------------------
-
 # Sett standardverdier i session_state
 lån_defaults = {
     "egenkapital": 300000,
