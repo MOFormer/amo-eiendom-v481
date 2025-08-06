@@ -118,6 +118,21 @@ driftskostnader_defaults = {
 }
 
 # --------------------------
+# Init reset-trigger for drift
+# --------------------------
+if "reset_drift_triggered" not in st.session_state:
+    st.session_state["reset_drift_triggered"] = False
+
+# --------------------------
+# Utfør tilbakestilling hvis trigget
+# --------------------------
+if st.session_state["reset_drift_triggered"]:
+    for key, default in driftskostnader_defaults.items():
+        st.session_state[f"drift_{key}"] = default
+    st.session_state["reset_drift_triggered"] = False
+    st.rerun()
+
+# --------------------------
 # Driftskostnader UI i sidebar
 # --------------------------
 with st.sidebar.expander("📈 Driftskostnader", expanded=True):
@@ -138,25 +153,8 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
-    if st.button("Tilbakestill driftskostnader", key="reset_drift_total"):
-        for key in driftskostnader_defaults:
-            st.session_state[f"drift_{key}"] = driftskostnader_defaults[key]
-        st.rerun()
-
-# --------------------------
-# Kjøpesum og kjøpskostnader
-# --------------------------
-kjøpesum = st.sidebar.number_input("Kjøpesum", value=3000000, step=100000, key="kjøpesum_input")
-kjøpskostnader = kjøpesum * 0.025
-
-# --------------------------
-# Total investering
-# --------------------------
-oppussing_total = sum(st.session_state[f"opp_{key}"] for key in oppussing_defaults)
-total_investering = kjøpesum + oppussing_total + kjøpskostnader
-
-st.subheader("✨ Resultat")
-st.metric("Total investering", f"{int(total_investering):,} kr")
+    if st.button("Tilbakestill driftskostnader", key="reset_drift"):
+        st.session_state["reset_drift_triggered"] = True
 
 
 # ------------------ Lån og finansiering ------------------
