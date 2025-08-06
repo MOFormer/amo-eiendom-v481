@@ -70,8 +70,11 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
             key=f"input_oppussing_{key}"
         )
 
-    # Kalkuler totalsum
-    oppussing_total = sum(st.session_state["oppussing_values"].values())
+    # Kalkuler totalsum først (før ekspander!)
+oppussing_total = sum(st.session_state["oppussing_values"].values())
+
+with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
+    
     
 
     # Reset-knapp
