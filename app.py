@@ -42,27 +42,16 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# Håndter reset hvis aktivert
-if "reset_oppussing" not in st.session_state:
-    st.session_state["reset_oppussing"] = False
-
-if st.session_state["reset_oppussing"]:
-    for key, value in oppussing_defaults.items():
+# Initialiser verdier
+for key, value in oppussing_defaults.items():
+    if f"opp_{key}" not in st.session_state:
         st.session_state[f"opp_{key}"] = value
-    st.session_state["reset_oppussing"] = False
-    st.experimental_rerun()  # Trygg her, etter UI er initialisert
 
 # ------------------ OPPUSSING UI ------------------
 
-# Initier oppussingsverdier
-for key, val in oppussing_defaults.items():
-    if f"opp_{key}" not in st.session_state:
-        st.session_state[f"opp_{key}"] = val
-
 # Kalkuler totalsum
-oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
+oppussing_total = sum(st.session_state[f"opp_{key}"] for key in oppussing_defaults)
 
-# Expander med total
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     for key in oppussing_defaults:
@@ -72,11 +61,11 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
             key=f"opp_{key}"
         )
 
-    # Bruk en form for å isolere knappen
-    with st.form("tilbakestill_oppussing_form"):
-        tilbakestill = st.form_submit_button("Tilbakestill oppussing")
-        if tilbakestill:
-            st.session_state["reset_oppussing"] = True
+    # Tilbakestill-knapp som oppdaterer session_state direkte
+    if st.button("Tilbakestill oppussing"):
+        for key, val in oppussing_defaults.items():
+            st.session_state[f"opp_{key}"] = val
+        # Ingen rerun – Streamlit oppdaterer inputene automatisk
 
 
 # ------------------ Driftskostnader ------------------
