@@ -269,7 +269,7 @@ df, akk = beregn_lån(
 st.subheader("Resultater")
 st.metric("Total investering", f"{int(total_investering):,} kr")
 st.metric("Brutto yield", f"{(leie * 12 / total_investering) * 100:.2f} %")
-st.metric("Netto yield", f"{((leie * 12 - drift) / total_investering) * 100:.2f} %")
+st.metric("Netto yield", f"{((leie * 12 - drift_total) / total_investering) * 100:.2f} %")
 
 # ------------------ Scrollbar (synlig) med st.dataframe ------------------
 st.subheader("Kontantstrøm (første 60 måneder)")
