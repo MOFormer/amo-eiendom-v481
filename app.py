@@ -50,8 +50,9 @@ oppussing_defaults = {
 # --------------------------
 # Init session state
 # --------------------------
-if "oppussing_values" not in st.session_state:
-    st.session_state["oppussing_values"] = oppussing_defaults.copy()
+for key in oppussing_defaults:
+    if f"input_oppussing_{key}" not in st.session_state:
+        st.session_state[f"input_oppussing_{key}"] = oppussing_defaults[key]
 
     
 # ------------------ OPPUSSING UI ------------------
@@ -70,42 +71,30 @@ if "oppussing_values" not in st.session_state:
 
 # --------------------------
 # Sidebar UI - Oppussing
+# --------------------------
+with st.sidebar.expander("🔨 Oppussing"):
 
-# Kalkuler totalsum først (før ekspander!)
-oppussing_total = sum(st.session_state["oppussing_values"].values())
-
-with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
-    # Vis inputfelter
+    total = 0
     for key in oppussing_defaults:
-        st.session_state["oppussing_values"][key] = st.number_input(
+        val = st.number_input(
             label=key.capitalize(),
-            value=st.session_state["oppussing_values"][key],
+            value=st.session_state[f"input_oppussing_{key}"],
             key=f"input_oppussing_{key}"
         )
+        st.session_state[f"input_oppussing_{key}"] = val
+        total += val
 
-    # Kalkuler totalsum
-    oppussing_total = sum(st.session_state["oppussing_values"].values())
-    
+    st.markdown(f"**Totalt: {int(total):,} kr**")
 
-    # Reset-knapp
     if st.button("Tilbakestill oppussing", key="btn_reset_oppussing"):
         for key in oppussing_defaults:
             st.session_state[f"input_oppussing_{key}"] = 0
         st.rerun()
 
 # --------------------------
-# Kjøpesum og kjøpskostnader
+# Kalkulert sum tilgjengelig videre
 # --------------------------
-kjøpesum = st.sidebar.number_input("Kjøpesum", value=3000000, step=100000, key="kjøpesum")
-kjøpskostnader = kjøpesum * 0.025
-
-# --------------------------
-# Total investering
-# --------------------------
-total_investering = kjøpesum + oppussing_total + kjøpskostnader
-
-st.subheader("✨ Resultat")
-st.metric("Total investering", f"{int(total_investering):,} kr")
+oppussing_total = sum(st.session_state[f"input_oppussing_{key}"] for key in oppussing_defaults)
 
 # ------------------ Driftskostnader ------------------
 
