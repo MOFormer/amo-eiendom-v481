@@ -33,38 +33,6 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ Oppussing ------------------
 
-# --------------------------
-# Oppussing standardverdier
-# --------------------------
-oppussing_defaults = {
-    "riving": 20000,
-    "bad": 120000,
-    "kjøkken": 100000,
-    "overflate": 30000,
-    "gulv": 40000,
-    "rørlegger": 25000,
-    "elektriker": 30000,
-    "utvendig": 20000,
-}
-
-# --------------------------
-# Init input-verdier i session_state og reset trigger
-# --------------------------
-if "reset_oppussing_triggered" not in st.session_state:
-    st.session_state["reset_oppussing_triggered"] = False
-
-for key, default in oppussing_defaults.items():
-    widget_key = f"opp_{key}"
-    if widget_key not in st.session_state or st.session_state["reset_oppussing_triggered"]:
-        st.session_state[widget_key] = 0 if st.session_state["reset_oppussing_triggered"] else default
-
-# Nullstill flagget etter reset
-if st.session_state["reset_oppussing_triggered"]:
-    st.session_state["reset_oppussing_triggered"] = False
-
-    
-# ------------------ OPPUSSING UI ------------------
-
 import streamlit as st
 
 # --------------------------
@@ -129,7 +97,6 @@ with st.sidebar.expander(f"🔨 Oppussing", expanded=True):
             step=1000,
             format="%d"
         )
-        st.session_state[widget_key] = val  # 🔄 Sørg for lagring
         oppussing_total += val
 
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
@@ -151,12 +118,13 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
             step=1000,
             format="%d"
         )
-        drift_total += val  # 👈 Ikke sett session_state manuelt!
+        drift_total += val
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
     if st.button("Tilbakestill driftskostnader", key="reset_drift"):
         st.session_state["reset_drift_triggered"] = True
+
 # --------------------------
 # KJØPESUM OG INVESTERING
 # --------------------------
