@@ -28,19 +28,31 @@ st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
-# --------- Oppussing ---------
-with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing):,} kr"):
-    riving = st.number_input("Riving", value=_riving, key="x1")
-    bad = st.number_input("Bad", value=_bad, key="x2")
-    kjøkken = st.number_input("Kjøkken", value=_kjøkken, key="x3")
-    overflate = st.number_input("Overflate", value=_overflate, key="x4")
-    gulv = st.number_input("Gulv/lister", value=_gulv, key="x5")
-    rørlegger = st.number_input("Rørlegger", value=_rør, key="x6")
-    elektriker = st.number_input("Elektriker", value=_el, key="x7")
-    utvendig = st.number_input("Utvendig", value=_utv, key="x8")
+# ------------------ Oppussing ------------------
 
-# ✅ Vis oppsummering etterpå
-st.sidebar.markdown(f"**🔨 Oppussing: {int(oppussing):,} kr**")
+# Midlertidige inputs for å kunne beregne summen først
+_riving = st.sidebar.number_input("Riving", value=20000, key="r1_temp", label_visibility="collapsed")
+_bad = st.sidebar.number_input("Bad", value=120000, key="r2_temp", label_visibility="collapsed")
+_kjøkken = st.sidebar.number_input("Kjøkken", value=100000, key="r3_temp", label_visibility="collapsed")
+_overflate = st.sidebar.number_input("Overflate", value=30000, key="r4_temp", label_visibility="collapsed")
+_gulv = st.sidebar.number_input("Gulv/lister", value=40000, key="r5_temp", label_visibility="collapsed")
+_rør = st.sidebar.number_input("Rørlegger", value=25000, key="r6_temp", label_visibility="collapsed")
+_el = st.sidebar.number_input("Elektriker", value=30000, key="r7_temp", label_visibility="collapsed")
+_utv = st.sidebar.number_input("Utvendig", value=20000, key="r8_temp", label_visibility="collapsed")
+
+# Beregn totalsum før expander
+oppussing = sum([_riving, _bad, _kjøkken, _overflate, _gulv, _rør, _el, _utv])
+
+# Nå vis expander med riktig tittel
+with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing):,} kr"):
+    riving = st.number_input("Riving", value=_riving, key="r1")
+    bad = st.number_input("Bad", value=_bad, key="r2")
+    kjøkken = st.number_input("Kjøkken", value=_kjøkken, key="r3")
+    overflate = st.number_input("Overflate", value=_overflate, key="r4")
+    gulv = st.number_input("Gulv/lister", value=_gulv, key="r5")
+    rørlegger = st.number_input("Rørlegger", value=_rør, key="r6")
+    elektriker = st.number_input("Elektriker", value=_el, key="r7")
+    utvendig = st.number_input("Utvendig", value=_utv, key="r8")
 
 # --------- Driftskostnader ---------
 with st.sidebar.expander("💡 Driftskostnader"):
