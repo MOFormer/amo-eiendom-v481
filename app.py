@@ -116,17 +116,6 @@ driftskostnader_defaults = {
     "vedlikehold": 8000,
 }
 
-# ✅ RESET-LOGIKK ALLER ØVERST
-if "reset_drift_triggered" not in st.session_state:
-    st.session_state["reset_drift_triggered"] = False
-
-if st.session_state["reset_drift_triggered"]:
-    for key in driftskostnader_defaults:
-        drift_key = f"drift_{key}"
-        if drift_key in st.session_state:
-            del st.session_state[drift_key]
-    st.session_state["reset_drift_triggered"] = False
-    st.experimental_rerun()
 
 # --------------------------
 # Driftskostnader UI (samme struktur som oppussing)
