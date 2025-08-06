@@ -106,6 +106,8 @@ st.metric("Total investering", f"{int(total_investering):,} kr")
 
 # ------------------ Driftskostnader ------------------
 
+import streamlit as st
+
 # --------------------------
 # Driftskostnader standardverdier
 # --------------------------
@@ -122,6 +124,17 @@ driftskostnader_defaults = {
 # --------------------------
 if "reset_drift_triggered" not in st.session_state:
     st.session_state["reset_drift_triggered"] = False
+
+# --------------------------
+# Utfør tilbakestilling FØR UI
+# --------------------------
+if st.session_state["reset_drift_triggered"]:
+    for key, default in driftskostnader_defaults.items():
+        widget_key = f"drift_{key}"
+        if widget_key in st.session_state:
+            del st.session_state[widget_key]  # viktig: fjern eksisterende først
+    st.session_state["reset_drift_triggered"] = False
+    st.experimental_rerun()  # restart for å tegne med nye defaults
     
 # --------------------------
 # Driftskostnader UI i sidebar
@@ -130,12 +143,9 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
     drift_total = 0
     for key, default in driftskostnader_defaults.items():
         widget_key = f"drift_{key}"
-        if widget_key not in st.session_state:
-            st.session_state[widget_key] = default
-
         val = st.number_input(
             label=key.capitalize(),
-            value=st.session_state[widget_key],
+            value=st.session_state.get(widget_key, default),
             key=widget_key,
             step=1000,
             format="%d"
@@ -145,17 +155,7 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
     if st.button("Tilbakestill driftskostnader", key="reset_drift"):
-        # Trigger reset – men gjør det i neste syklus
         st.session_state["reset_drift_triggered"] = True
-
-# --------------------------
-# Utfør tilbakestilling etter UI
-# --------------------------
-if st.session_state["reset_drift_triggered"]:
-    for key, default in driftskostnader_defaults.items():
-        st.session_state[f"drift_{key}"] = default
-    st.session_state["reset_drift_triggered"] = False
-    st.experimental_rerun()
 
 
 # ------------------ Lån og finansiering ------------------
