@@ -58,10 +58,10 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing):,} kr"):
         st.session_state[key] = st.number_input(key.capitalize(), value=st.session_state[key])
 
     # 🔄 Reset-knapp
-    if st.button("Tilbakestill oppussing"):
-        for key, val in oppussing_defaults.items():
-            st.session_state[key] = val
-        st.experimental_rerun()
+  if st.button("Tilbakestill oppussing"):
+    for key, val in oppussing_defaults.items():
+        st.session_state[key] = val
+    # st.experimental_rerun()  ← kan kommenteres ut ved behov
 
 # ------------------ Driftskostnader ------------------
 
