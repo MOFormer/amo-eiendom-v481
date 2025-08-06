@@ -28,22 +28,23 @@ st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
-# --------- Oppussing med summering inni expander ---------
-with st.sidebar.expander("🔨 Oppussing"):
-    riving = st.number_input("Riving", value=20_000)
-    bad = st.number_input("Bad", value=120_000)
-    kjøkken = st.number_input("Kjøkken", value=100_000)
-    overflate = st.number_input("Overflate", value=30_000)
-    gulv = st.number_input("Gulv og lister", value=40_000)
-    rørlegger = st.number_input("Rørlegger", value=25_000)
-    elektriker = st.number_input("Elektriker", value=30_000)
-    utvendig = st.number_input("Utvendig", value=20_000)
+# --------- Oppussing ---------
+# Midlertidige inputs for summering før expanderen
+_riv = st.sidebar.number_input("🔨 Riving", value=20_000, key="riving_sum_calc")
+_bad = st.sidebar.number_input("🔨 Bad", value=120_000, key="bad_sum_calc")
+_kjøkken = st.sidebar.number_input("🔨 Kjøkken", value=100_000, key="kjøkken_sum_calc")
+_overflate = st.sidebar.number_input("🔨 Overflate", value=30_000, key="overflate_sum_calc")
+_gulv = st.sidebar.number_input("🔨 Gulv", value=40_000, key="gulv_sum_calc")
+_rør = st.sidebar.number_input("🔨 Rørlegger", value=25_000, key="rør_sum_calc")
+_el = st.sidebar.number_input("🔨 Elektriker", value=30_000, key="el_sum_calc")
+_utv = st.sidebar.number_input("🔨 Utvendig", value=20_000, key="utv_sum_calc")
+# Skjul dem etter summering
+for k in ["riving_sum_calc", "bad_sum_calc", "kjøkken_sum_calc", "overflate_sum_calc",
+          "gulv_sum_calc", "rør_sum_calc", "el_sum_calc", "utv_sum_calc"]:
+    st.session_state.pop(k, None)
 
-    oppussing = sum([
-        riving, bad, kjøkken, overflate,
-        gulv, rørlegger, elektriker, utvendig
-    ])
-    st.markdown(f"**Totalt: {int(oppussing):,} kr**")
+oppussing_sum = sum([_riv, _bad, _kjøkken, _overflate, _gulv, _rør, _el, _utv])
+st.sidebar.markdown(f"**🔨 Oppussing: {int(oppussing_sum):,} kr**")
 
 # --------- Driftskostnader med expander ---------
 with st.sidebar.expander("💡 Driftskostnader per år"):
