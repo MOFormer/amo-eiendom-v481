@@ -63,7 +63,7 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
         st.session_state["oppussing_values"][key] = st.number_input(
             label=key.capitalize(),
             value=st.session_state["oppussing_values"][key],
-            key=f"opp_{key}"
+            key=f"input_oppussing_{key}"  # 👈 Unik key
         )
 
 # ------------------ OPPUSSING UI ------------------
