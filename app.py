@@ -104,7 +104,7 @@ st.metric("Total investering", f"{int(total_investering):,} kr")
 # --------------------------
 # Driftskostnader standardverdier
 # --------------------------
-import streamlit as st
+
 
 # --------------------------
 # Standardverdier
