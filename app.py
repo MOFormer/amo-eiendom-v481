@@ -65,7 +65,7 @@ with st.sidebar.expander("🔨 Oppussing"):
 
     oppussing_total = sum(oppussing_values.values())
     with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
-    st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
+   
 
     if st.button("Tilbakestill oppussing"):
         st.session_state["oppussing_reset_count"] += 1
