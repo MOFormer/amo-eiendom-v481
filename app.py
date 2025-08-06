@@ -28,9 +28,7 @@ st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
-# ------------------ OPPUSSING RESET ------------------
-import streamlit as st
-
+# ------------------ OPPUSSING RESET UTEN RERUN ------------------
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -42,27 +40,23 @@ oppussing_defaults = {
     "utvendig": 20000
 }
 
-# 🔹 Render noe først, så det ikke krasjer
-st.title("AMO Eiendom")
-
-# 🔁 Trygg rerun etter UI start
-if st.session_state.get("reset_oppussing"):
+# Klargjør verdier om tilbakestilling er aktivert
+if st.session_state.get("reset_oppussing_pending"):
     for key, val in oppussing_defaults.items():
         st.session_state[f"opp_{key}"] = val
-    st.session_state["reset_oppussing"] = False
-    st.experimental_rerun()
+    # Ikke kall rerun her! Vi gjør det trygt senere
 
 # ------------------ OPPUSSING UI ------------------
 
-# Initier alle verdier hvis mangler
+# Initier session_state ved behov
 for key, val in oppussing_defaults.items():
     if f"opp_{key}" not in st.session_state:
         st.session_state[f"opp_{key}"] = val
 
-# Kalkuler total oppussing
+# Kalkuler totalsum
 oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
 
-# Vis input-felter med total
+# Expander med summen i tittelen
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     for key in oppussing_defaults:
@@ -73,7 +67,14 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
         )
 
     if st.button("Tilbakestill oppussing"):
-        st.session_state["reset_oppussing"] = True
+        st.session_state["reset_oppussing_pending"] = True
+        st.session_state["trigger_rerun"] = True  # signaliser rerun
+
+# ------------------ TRYGG RERUN ------------------
+
+if st.session_state.get("trigger_rerun"):
+    st.session_state["trigger_rerun"] = False
+    st.experimental_rerun()
 
 # ------------------ Driftskostnader ------------------
 
