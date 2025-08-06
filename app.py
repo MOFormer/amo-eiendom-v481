@@ -68,24 +68,23 @@ if st.session_state["reset_oppussing_triggered"]:
 # --------------------------
 # Oppussing UI i sidebar
 # --------------------------
-with st.sidebar.expander("🔨 Oppussing", expanded=True):
-    total = 0
-    for key in oppussing_defaults:
-        widget_key = f"opp_{key}"
+with st.sidebar.expander("📈 Driftskostnader", expanded=True):
+    drift_total = 0
+    for key, default in driftskostnader_defaults.items():
+        widget_key = f"drift_input_{key}"  # <- endret
         val = st.number_input(
             label=key.capitalize(),
-            value=st.session_state[widget_key],
+            value=st.session_state.get(widget_key, default),
             key=widget_key,
             step=1000,
             format="%d"
         )
-        total += val
+        drift_total += val
 
-    st.markdown(f"**Totalt: {int(total):,} kr**")
+    st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
-    if st.button("Tilbakestill oppussing", key="reset_oppussing"):
-        st.session_state["reset_oppussing_triggered"] = True
-        st.rerun()
+    if st.button("Tilbakestill driftskostnader", key="reset_drift_btn"):
+        st.session_state["reset_drift_triggered"] = True
 
 # --------------------------
 # Kjøpesum og kjøpskostnader
