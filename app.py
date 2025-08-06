@@ -30,7 +30,6 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ Oppussing ------------------
 
-# Oppussing default-verdier
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -42,16 +41,30 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# Initialiser verdier
-for key, value in oppussing_defaults.items():
-    if f"opp_{key}" not in st.session_state:
-        st.session_state[f"opp_{key}"] = value
+# Initier reset-flagg
+if "reset_oppussing" not in st.session_state:
+    st.session_state["reset_oppussing"] = False
+
+# Trygg tilbakestilling av verdier (før widgets vises)
+if st.session_state["reset_oppussing"]:
+    for key, val in oppussing_defaults.items():
+        # Skriv kun hvis key IKKE allerede er brukt av en widget
+        widget_key = f"opp_{key}"
+        if widget_key not in st.session_state:
+            st.session_state[widget_key] = val
+    # Fjern flagg
+    st.session_state["reset_oppussing"] = False
 
 # ------------------ OPPUSSING UI ------------------
 
-# Kalkuler totalsum
-oppussing_total = sum(st.session_state[f"opp_{key}"] for key in oppussing_defaults)
+# Initier verdier hvis mangler
+for key, val in oppussing_defaults.items():
+    st.session_state.setdefault(f"opp_{key}", val)
 
+# Regn ut totalsum
+oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
+
+# Vis UI
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     for key in oppussing_defaults:
@@ -61,11 +74,12 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
             key=f"opp_{key}"
         )
 
-    # Tilbakestill-knapp som oppdaterer session_state direkte
+    # Reset-knapp – men den endrer ikke feltene direkte
     if st.button("Tilbakestill oppussing"):
-        for key, val in oppussing_defaults.items():
-            st.session_state[f"opp_{key}"] = val
-        # Ingen rerun – Streamlit oppdaterer inputene automatisk
+        # Fjern alle relevante session_state-widget keys
+        for key in oppussing_defaults:
+            del st.session_state[f"opp_{key}"]
+        st.session_state["reset_oppussing"] = True
 
 
 # ------------------ Driftskostnader ------------------
