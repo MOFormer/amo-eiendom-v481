@@ -120,13 +120,13 @@ driftskostnader_defaults = {
 }
 
 # --------------------------
-# Init trigger hvis ikke satt
+# Init trigger før noe UI
 # --------------------------
 if "reset_drift_triggered" not in st.session_state:
     st.session_state["reset_drift_triggered"] = False
 
 # --------------------------
-# ✅ Riktig sted for reset og rerun
+# 🔁 RESET – må skje før noe UI vises
 # --------------------------
 if st.session_state["reset_drift_triggered"]:
     for key in driftskostnader_defaults:
@@ -137,7 +137,7 @@ if st.session_state["reset_drift_triggered"]:
     st.experimental_rerun()
 
 # --------------------------
-# Nå er det trygt å bygge UI
+# Nå starter UI
 # --------------------------
 with st.sidebar.expander("📈 Driftskostnader", expanded=True):
     drift_total = 0
