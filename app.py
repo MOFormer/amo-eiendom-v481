@@ -48,12 +48,19 @@ oppussing_defaults = {
 }
 
 # --------------------------
-# Init input-verdier i session_state
+# Init input-verdier i session_state og reset trigger
 # --------------------------
+if "reset_oppussing_triggered" not in st.session_state:
+    st.session_state["reset_oppussing_triggered"] = False
+
 for key, default in oppussing_defaults.items():
     widget_key = f"opp_{key}"
-    if widget_key not in st.session_state:
-        st.session_state[widget_key] = default
+    if widget_key not in st.session_state or st.session_state["reset_oppussing_triggered"]:
+        st.session_state[widget_key] = 0 if st.session_state["reset_oppussing_triggered"] else default
+
+# Nullstill flagget etter reset
+if st.session_state["reset_oppussing_triggered"]:
+    st.session_state["reset_oppussing_triggered"] = False
 
     
 # ------------------ OPPUSSING UI ------------------
@@ -69,15 +76,15 @@ with st.sidebar.expander("🔨 Oppussing", expanded=True):
             label=key.capitalize(),
             value=st.session_state[widget_key],
             key=widget_key,
-            step=1000
+            step=1000,
+            format="%d"
         )
         total += val
 
     st.markdown(f"**Totalt: {int(total):,} kr**")
 
     if st.button("Tilbakestill oppussing", key="reset_oppussing"):
-        for key in oppussing_defaults:
-            st.session_state[f"opp_{key}"] = 0
+        st.session_state["reset_oppussing_triggered"] = True
         st.rerun()
 
 # --------------------------
@@ -94,6 +101,7 @@ total_investering = kjøpesum + oppussing_total + kjøpskostnader
 
 st.subheader("✨ Resultat")
 st.metric("Total investering", f"{int(total_investering):,} kr")
+
 
 
 # ------------------ Driftskostnader ------------------
