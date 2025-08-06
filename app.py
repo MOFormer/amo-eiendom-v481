@@ -199,7 +199,16 @@ def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierf
 # ------------------ Beregning ------------------
 kjøpskostnader = kjøpesum * 0.025
 total_investering = kjøpesum + oppussing + kjøpskostnader
-df, akk = beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierform)
+df, akk = beregn_lån(
+    st.session_state["lån"],
+    st.session_state["rente"],
+    st.session_state["løpetid"],
+    st.session_state["avdragsfri"],
+    st.session_state["lånetype"],
+    leie,
+    drift,
+    st.session_state["eierform"]
+)
 
 # ------------------ Resultater ------------------
 st.subheader("Resultater")
