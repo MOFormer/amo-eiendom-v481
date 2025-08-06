@@ -40,24 +40,22 @@ oppussing_defaults = {
     "utvendig": 20000
 }
 
-# ------------------ HÅNDTER TILBAKESTILL ------------------
-if st.session_state.get("reset_oppussing"):
-    for key, val in oppussing_defaults.items():
-        st.session_state[f"opp_{key}"] = val
-    st.session_state["reset_oppussing"] = False
-    st.experimental_rerun()
-
-# ------------------ OPPUSSING UI ------------------
-
-# Sørg for at alle verdier er i session_state
+# Klargjør standardverdier hvis ikke satt
 for key, val in oppussing_defaults.items():
     if f"opp_{key}" not in st.session_state:
         st.session_state[f"opp_{key}"] = val
 
-# Kalkuler totalsum
+# Utfør tilbakestill om flagg er satt (UTEN rerun her!)
+if st.session_state.get("reset_oppussing"):
+    for key, val in oppussing_defaults.items():
+        st.session_state[f"opp_{key}"] = val
+    st.session_state["reset_oppussing"] = False
+    st.session_state["trigger_rerun"] = True  # Vi ber om rerun, men gjør det senere
+
+# ------------------ OPPUSSING UI ------------------
+
 oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
 
-# Expander med summering
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     for key in oppussing_defaults:
@@ -69,6 +67,12 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     if st.button("Tilbakestill oppussing"):
         st.session_state["reset_oppussing"] = True
+
+# ------------------ TRYGG RERUN ------------------
+
+if st.session_state.get("trigger_rerun"):
+    st.session_state["trigger_rerun"] = False
+    st.experimental_rerun()
 
 # ------------------ Driftskostnader ------------------
 
