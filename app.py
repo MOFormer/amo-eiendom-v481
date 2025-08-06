@@ -105,6 +105,9 @@ st.metric("Total investering", f"{int(total_investering):,} kr")
 # --------------------------
 # Driftskostnader standardverdier
 # --------------------------
+import streamlit as st
+
+# --- Definer først standardverdier ---
 driftskostnader_defaults = {
     "forsikring": 8000,
     "strøm": 12000,
@@ -113,15 +116,10 @@ driftskostnader_defaults = {
     "vedlikehold": 8000,
 }
 
-# --------------------------
-# Init reset-trigger for driftskostnader
-# --------------------------
+# ✅ RESET-LOGIKK ALLER ØVERST
 if "reset_drift_triggered" not in st.session_state:
     st.session_state["reset_drift_triggered"] = False
 
-# --------------------------
-# 🔁 RESET må komme FØR UI bygges
-# --------------------------
 if st.session_state["reset_drift_triggered"]:
     for key in driftskostnader_defaults:
         drift_key = f"drift_{key}"
