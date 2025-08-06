@@ -39,11 +39,12 @@ with st.sidebar.expander("🔨 Oppussing"):
     elektriker = st.number_input("Elektriker", value=30_000)
     utvendig = st.number_input("Utvendig", value=20_000)
 
-# ✅ Summer etter input
-oppussing = sum([
-    riving, bad, kjøkken, overflate,
-    gulv, rørlegger, elektriker, utvendig
-])
+    # ✅ SUM inn i boksen – øverst
+    oppussing = sum([
+        riving, bad, kjøkken, overflate,
+        gulv, rørlegger, elektriker, utvendig
+    ])
+    st.markdown(f"**Totalt: {int(oppussing):,} kr**")
 
 # ✅ Vis oppsummering etterpå
 st.sidebar.markdown(f"**🔨 Oppussing: {int(oppussing):,} kr**")
