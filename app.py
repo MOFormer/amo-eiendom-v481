@@ -113,20 +113,18 @@ driftskostnader_defaults = {
 }
 
 # --------------------------
-# Init verdier eller reset
+# Init reset-trigger FØR bruk
+# --------------------------
+if "reset_drift_triggered" not in st.session_state:
+    st.session_state["reset_drift_triggered"] = False
+
+# --------------------------
+# Init inputverdier eller reset
 # --------------------------
 for key, default in driftskostnader_defaults.items():
     widget_key = f"drift_{key}"
     if widget_key not in st.session_state or st.session_state["reset_drift_triggered"]:
         st.session_state[widget_key] = 0 if st.session_state["reset_drift_triggered"] else default
-
-# --------------------------
-# Init reset-trigger
-# --------------------------
-if "reset_drift_triggered" not in st.session_state:
-    st.session_state["reset_drift_triggered"] = False
-
-
 
 # Nullstill flagget etter reset
 if st.session_state["reset_drift_triggered"]:
@@ -148,10 +146,8 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
         )
         drift_total += val
 
-    # Totalsum i boksen
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
-    # Reset-knapp
     if st.button("Tilbakestill driftskostnader", key="reset_drift_btn"):
         st.session_state["reset_drift_triggered"] = True
         
