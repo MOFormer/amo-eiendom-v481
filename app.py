@@ -28,15 +28,8 @@ st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
-# ------------------ Oppussing ------------------
-with st.sidebar.container():
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.markdown("**🔨 Oppussing**")
-    with col2:
-        st.markdown("**0 kr**", help="Total oppussing vises her")  # vi oppdaterer denne etterpå
-
-with st.sidebar.expander("Detaljer for oppussing"):
+# --------- Oppussing ---------
+with st.sidebar.expander("🔨 Oppussing"):
     riving = st.number_input("Riving", value=20_000)
     bad = st.number_input("Bad", value=120_000)
     kjøkken = st.number_input("Kjøkken", value=100_000)
@@ -46,10 +39,14 @@ with st.sidebar.expander("Detaljer for oppussing"):
     elektriker = st.number_input("Elektriker", value=30_000)
     utvendig = st.number_input("Utvendig", value=20_000)
 
+# ✅ Summer etter input
 oppussing = sum([
     riving, bad, kjøkken, overflate,
     gulv, rørlegger, elektriker, utvendig
 ])
+
+# ✅ Vis oppsummering etterpå
+st.sidebar.markdown(f"**🔨 Oppussing: {int(oppussing):,} kr**")
 
 # --------- Driftskostnader med expander ---------
 with st.sidebar.expander("💡 Driftskostnader per år"):
