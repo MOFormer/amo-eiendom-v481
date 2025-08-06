@@ -28,7 +28,9 @@ st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
-# Oppussing defaults
+# ------------------ Oppussing ------------------
+
+# Oppussing default-verdier
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -37,30 +39,30 @@ oppussing_defaults = {
     "gulv": 40000,
     "rørlegger": 25000,
     "elektriker": 30000,
-    "utvendig": 20000
+    "utvendig": 20000,
 }
 
-# Init dummy hvis ikke finnes
-if "opp_dummy" not in st.session_state:
-    st.session_state["opp_dummy"] = 0
-
-# Utfør reset hvis flagg er satt
-if st.session_state.get("reset_oppussing"):
-    for key, val in oppussing_defaults.items():
-        st.session_state[f"opp_{key}"] = val
+# Håndter reset hvis aktivert
+if "reset_oppussing" not in st.session_state:
     st.session_state["reset_oppussing"] = False
-    st.session_state["opp_dummy"] += 1  # trigger rerun via usynlig endring
+
+if st.session_state["reset_oppussing"]:
+    for key, value in oppussing_defaults.items():
+        st.session_state[f"opp_{key}"] = value
+    st.session_state["reset_oppussing"] = False
+    st.experimental_rerun()  # Trygg her, etter UI er initialisert
 
 # ------------------ OPPUSSING UI ------------------
 
-# Sørg for at alle oppussingsfelter finnes i session_state
+# Initier oppussingsverdier
 for key, val in oppussing_defaults.items():
-    st.session_state.setdefault(f"opp_{key}", val)
+    if f"opp_{key}" not in st.session_state:
+        st.session_state[f"opp_{key}"] = val
 
 # Kalkuler totalsum
 oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
 
-# Expander med sum
+# Expander med total
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     for key in oppussing_defaults:
@@ -70,8 +72,12 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
             key=f"opp_{key}"
         )
 
-    if st.button("Tilbakestill oppussing"):
-        st.session_state["reset_oppussing"] = True
+    # Bruk en form for å isolere knappen
+    with st.form("tilbakestill_oppussing_form"):
+        tilbakestill = st.form_submit_button("Tilbakestill oppussing")
+        if tilbakestill:
+            st.session_state["reset_oppussing"] = True
+
 
 # ------------------ Driftskostnader ------------------
 
