@@ -44,14 +44,15 @@ oppussing = sum([
     gulv, rørlegger, elektriker, utvendig
 ])
 
-st.sidebar.header("Driftskostnader (årlig)")
-drift = sum([
-    st.sidebar.number_input("Forsikring", value=8_000),
-    st.sidebar.number_input("Strøm", value=12_000),
-    st.sidebar.number_input("Kommunale avgifter", value=9_000),
-    st.sidebar.number_input("Internett", value=3_000),
-    st.sidebar.number_input("Vedlikehold", value=8_000),
-])
+# --------- Driftskostnader med expander ---------
+with st.sidebar.expander("💡 Driftskostnader per år"):
+    forsikring = st.number_input("Forsikring", value=8_000)
+    strøm = st.number_input("Strøm", value=12_000)
+    kommunale = st.number_input("Kommunale avgifter", value=9_000)
+    internett = st.number_input("Internett", value=3_000)
+    vedlikehold = st.number_input("Vedlikehold", value=8_000)
+
+drift = sum([forsikring, strøm, kommunale, internett, vedlikehold])
 
 st.sidebar.header("Lån")
 lån = st.sidebar.number_input("Lånebeløp", value=2_700_000)
