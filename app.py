@@ -146,7 +146,7 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
 # --------------------------
 # Kjøpesum og kjøpskostnader
 # --------------------------
-kjøpesum = st.sidebar.number_input("Kjøpesum", value=3000000, step=100000, key="kjøpesum")
+kjøpesum = st.sidebar.number_input("Kjøpesum", value=3000000, step=100000, key="kjøpesum_input")
 kjøpskostnader = kjøpesum * 0.025
 
 # --------------------------
