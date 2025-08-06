@@ -62,7 +62,7 @@ if "oppussing_values" not in st.session_state:
 # Kalkuler totalsum først (før ekspander!)
 oppussing_total = sum(st.session_state["oppussing_values"].values())
 
-with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
+with st.sidebar.expander(f"🔨 Oppussing", expanded=True):
     # Vis inputfelter
     for key in oppussing_defaults:
         st.session_state["oppussing_values"][key] = st.number_input(
@@ -73,6 +73,7 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     # Kalkuler totalsum
     oppussing_total = sum(st.session_state["oppussing_values"].values())
+    st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
     
 
     # Reset-knapp
