@@ -50,34 +50,35 @@ oppussing_defaults = {
 # --------------------------
 # Init session state
 # --------------------------
-for key in oppussing_defaults:
-    state_key = f"opp_{key}"
-    if state_key not in st.session_state:
-        st.session_state[state_key] = oppussing_defaults[key]
-
-# --------------------------
-# Kalkuler totalsum først
-# --------------------------
-oppussing_total = sum(st.session_state[f"opp_{key}"] for key in oppussing_defaults)
+if "oppussing_values" not in st.session_state:
+    st.session_state["oppussing_values"] = oppussing_defaults.copy()
 
     
 # ------------------ OPPUSSING UI ------------------
 
 # --------------------------
 # Sidebar UI - Oppussing
-# --------------------------
+
+# Kalkuler totalsum først (før ekspander!)
+oppussing_total = sum(st.session_state["oppussing_values"].values())
+
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
+    # Vis inputfelter
     for key in oppussing_defaults:
-        st.number_input(
+        st.session_state["oppussing_values"][key] = st.number_input(
             label=key.capitalize(),
-            value=st.session_state[f"opp_{key}"],
-            key=f"opp_{key}"
+            value=st.session_state["oppussing_values"][key],
+            key=f"input_oppussing_{key}"
         )
 
+    # Kalkuler totalsum
+    oppussing_total = sum(st.session_state["oppussing_values"].values())
+    
+
+    # Reset-knapp
     if st.button("Tilbakestill oppussing", key="btn_reset_oppussing"):
         for key in oppussing_defaults:
-            st.session_state[f"opp_{key}"] = 0
-        st.rerun()
+            st.session_state["oppussing_values"][key] = 0
 
 # --------------------------
 # Kjøpesum og kjøpskostnader
@@ -88,12 +89,8 @@ kjøpskostnader = kjøpesum * 0.025
 # --------------------------
 # Total investering
 # --------------------------
-oppussing_total = sum(st.session_state[f"opp_{key}"] for key in oppussing_defaults)
 total_investering = kjøpesum + oppussing_total + kjøpskostnader
 
-# --------------------------
-# Resultatvisning
-# --------------------------
 st.subheader("✨ Resultat")
 st.metric("Total investering", f"{int(total_investering):,} kr")
 
