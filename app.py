@@ -85,7 +85,7 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
         )
         st.session_state["oppussing_values"][key] = val
 
-    if st.button("Tilbakestill oppussing"):
+    if st.button("Tilbakestill oppussing", key="btn_reset_oppussing"):
         st.session_state["oppussing_reset_trigger"] = True
 
 # --------------------------
