@@ -48,33 +48,36 @@ oppussing_defaults = {
 }
 
 # --------------------------
-# Init session state
+# Init input-verdier i session_state
 # --------------------------
-if "oppussing_values" not in st.session_state:
-    st.session_state["oppussing_values"] = oppussing_defaults.copy()
+for key, default in oppussing_defaults.items():
+    widget_key = f"opp_{key}"
+    if widget_key not in st.session_state:
+        st.session_state[widget_key] = default
 
     
 # ------------------ OPPUSSING UI ------------------
 
 # --------------------------
-# Sidebar UI - Oppussing
+# Oppussing UI i sidebar
 # --------------------------
 with st.sidebar.expander("🔨 Oppussing", expanded=True):
+    total = 0
     for key in oppussing_defaults:
-        st.session_state["oppussing_values"][key] = st.number_input(
+        widget_key = f"opp_{key}"
+        val = st.number_input(
             label=key.capitalize(),
-            value=st.session_state["oppussing_values"][key],
-            key=f"input_oppussing_{key}"
+            value=st.session_state[widget_key],
+            key=widget_key,
+            step=1000
         )
+        total += val
 
-    # Kalkuler og vis totalsum
-    oppussing_total = sum(st.session_state["oppussing_values"].values())
-    st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
+    st.markdown(f"**Totalt: {int(total):,} kr**")
 
-    # Reset-knapp
-    if st.button("Tilbakestill oppussing", key="btn_reset_oppussing"):
+    if st.button("Tilbakestill oppussing", key="reset_oppussing"):
         for key in oppussing_defaults:
-            st.session_state["oppussing_values"][key] = 0
+            st.session_state[f"opp_{key}"] = 0
         st.rerun()
 
 # --------------------------
@@ -86,6 +89,7 @@ kjøpskostnader = kjøpesum * 0.025
 # --------------------------
 # Total investering
 # --------------------------
+oppussing_total = sum(st.session_state[f"opp_{key}"] for key in oppussing_defaults)
 total_investering = kjøpesum + oppussing_total + kjøpskostnader
 
 st.subheader("✨ Resultat")
