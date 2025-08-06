@@ -107,6 +107,17 @@ st.metric("Total investering", f"{int(total_investering):,} kr")
 # ------------------ Driftskostnader ------------------
 
 # --------------------------
+# Driftskostnader standardverdier
+# --------------------------
+driftskostnader_defaults = {
+    "forsikring": 8000,
+    "strøm": 12000,
+    "kommunale avgifter": 9000,
+    "internett": 3000,
+    "vedlikehold": 8000,
+}
+
+# --------------------------
 # Driftskostnader UI i sidebar
 # --------------------------
 with st.sidebar.expander("📈 Driftskostnader", expanded=True):
