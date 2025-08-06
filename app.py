@@ -28,7 +28,7 @@ st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
-# --------- Oppussing med expander ---------
+# --------- Oppussing med summering inni expander ---------
 with st.sidebar.expander("🔨 Oppussing"):
     riving = st.number_input("Riving", value=20_000)
     bad = st.number_input("Bad", value=120_000)
@@ -39,11 +39,11 @@ with st.sidebar.expander("🔨 Oppussing"):
     elektriker = st.number_input("Elektriker", value=30_000)
     utvendig = st.number_input("Utvendig", value=20_000)
 
-oppussing = sum([
-    riving, bad, kjøkken, overflate,
-    gulv, rørlegger, elektriker, utvendig
-])
-st.sidebar.markdown(f"**Total oppussing:** {int(oppussing):,} kr")
+    oppussing = sum([
+        riving, bad, kjøkken, overflate,
+        gulv, rørlegger, elektriker, utvendig
+    ])
+    st.markdown(f"**Totalt: {int(oppussing):,} kr**")
 
 # --------- Driftskostnader med expander ---------
 with st.sidebar.expander("💡 Driftskostnader per år"):
