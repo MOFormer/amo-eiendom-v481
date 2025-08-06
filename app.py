@@ -77,6 +77,9 @@ with st.sidebar.expander("🔨 Oppussing"):
     if st.button("Tilbakestill oppussing"):
         st.session_state["oppussing_reset_trigger"] = True
 
+# Etter at du har oppdatert alle verdier:
+oppussing_total = sum(st.session_state["oppussing_values"].values())
+
 
 # ------------------ Driftskostnader ------------------
 
