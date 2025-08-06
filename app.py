@@ -30,7 +30,9 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ Oppussing ------------------
 
-# --- Standardverdier ---
+# --------------------------
+# Oppussing standardverdier
+# --------------------------
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -42,33 +44,55 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# --- Init reset count ---
-if "oppussing_reset_count" not in st.session_state:
-    st.session_state["oppussing_reset_count"] = 0
+# --------------------------
+# Init session state
+# --------------------------
+if "oppussing_values" not in st.session_state:
+    st.session_state["oppussing_values"] = oppussing_defaults.copy()
 
-# --- Brukes til å samle opp verdier
-oppussing_values = {}
+if "oppussing_reset_trigger" not in st.session_state:
+    st.session_state["oppussing_reset_trigger"] = False
+
+if st.session_state["oppussing_reset_trigger"]:
+    for key in oppussing_defaults:
+        st.session_state["oppussing_values"][key] = 0
+    st.session_state["oppussing_reset_trigger"] = False
 
 # ------------------ OPPUSSING UI ------------------
 
-# --- UI ---
-with st.sidebar.expander("🔨 Oppussing"):
+# --------------------------
+# Sidebar UI - Oppussing
+# --------------------------
+st.sidebar.title("Eiendomskalkulator")
 
-    for key, default in oppussing_defaults.items():
-        unique_key = f"opp_{key}_{st.session_state['oppussing_reset_count']}"
+# Kalkuler totalsum først
+oppussing_total = sum(st.session_state["oppussing_values"].values())
+
+with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
+    for key in oppussing_defaults:
         val = st.number_input(
             label=key.capitalize(),
-            value=0 if st.session_state["oppussing_reset_count"] > 0 else default,
-            key=unique_key,
+            value=st.session_state["oppussing_values"][key],
+            key=f"opp_{key}"
         )
-        oppussing_values[key] = val
-
-    oppussing_total = sum(oppussing_values.values())
-    with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
-   
+        st.session_state["oppussing_values"][key] = val
 
     if st.button("Tilbakestill oppussing"):
-        st.session_state["oppussing_reset_count"] += 1
+        st.session_state["oppussing_reset_trigger"] = True
+
+# --------------------------
+# Kjøpesum og kjøpskostnader
+# --------------------------
+kjøpesum = st.sidebar.number_input("Kjøpesum", value=3000000, step=100000)
+kjøpskostnader = kjøpesum * 0.025
+
+# --------------------------
+# Total investering
+# --------------------------
+total_investering = kjøpesum + oppussing_total + kjøpskostnader
+
+st.subheader("✨ Resultat")
+st.metric("Total investering", f"{int(total_investering):,} kr")
 
 
 # ------------------ Driftskostnader ------------------
