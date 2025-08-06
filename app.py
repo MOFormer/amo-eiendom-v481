@@ -107,29 +107,21 @@ st.metric("Total investering", f"{int(total_investering):,} kr")
 # ------------------ Driftskostnader ------------------
 
 # --------------------------
-# Driftskostnader UI i sidebar
+# Driftskostnader standardverdier
 # --------------------------
-with st.sidebar.expander("📈 Driftskostnader", expanded=True):
-    drift_total = 0
-    for key, default in driftskostnader_defaults.items():
-        widget_key = f"drift_{key}"
-        if widget_key not in st.session_state:
-            st.session_state[widget_key] = default
+driftskostnader_defaults = {
+    "forsikring": 8000,
+    "strøm": 12000,
+    "kommunale avgifter": 9000,
+    "internett": 3000,
+    "vedlikehold": 8000,
+}
 
-        val = st.number_input(
-            label=key.capitalize(),
-            value=st.session_state[widget_key],
-            key=widget_key,
-            step=1000,
-            format="%d"
-        )
-        drift_total += val
-
-    st.markdown(f"**Totalt: {int(drift_total):,} kr**")
-
-    if st.button("Tilbakestill driftskostnader", key="reset_drift"):
-        # Trigger reset – men gjør det i neste syklus
-        st.session_state["reset_drift_triggered"] = True
+# --------------------------
+# Init reset-trigger
+# --------------------------
+if "reset_drift_triggered" not in st.session_state:
+    st.session_state["reset_drift_triggered"] = False
     
 # --------------------------
 # Driftskostnader UI i sidebar
