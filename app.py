@@ -30,6 +30,7 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ Oppussing ------------------
 
+# Oppussing default-verdier
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -41,19 +42,16 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# Initier reset-flagg
-if "reset_oppussing" not in st.session_state:
-    st.session_state["reset_oppussing"] = False
+# Initier dummy for å trigge rerun trygt
+if "opp_dummy" not in st.session_state:
+    st.session_state["opp_dummy"] = 0
 
-# Trygg tilbakestilling av verdier (før widgets vises)
-if st.session_state["reset_oppussing"]:
+# Utfør reset om flagg er satt
+if st.session_state.get("reset_oppussing"):
     for key, val in oppussing_defaults.items():
-        # Skriv kun hvis key IKKE allerede er brukt av en widget
-        widget_key = f"opp_{key}"
-        if widget_key not in st.session_state:
-            st.session_state[widget_key] = val
-    # Fjern flagg
+        st.session_state[f"opp_{key}"] = val
     st.session_state["reset_oppussing"] = False
+    st.session_state["opp_dummy"] += 1  # ← trigger automatisk rerun
 
 # ------------------ OPPUSSING UI ------------------
 
@@ -64,7 +62,7 @@ for key, val in oppussing_defaults.items():
 # Regn ut totalsum
 oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
 
-# Vis UI
+# Vis oppussingseksjon
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     for key in oppussing_defaults:
@@ -74,11 +72,7 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
             key=f"opp_{key}"
         )
 
-    # Reset-knapp – men den endrer ikke feltene direkte
     if st.button("Tilbakestill oppussing"):
-        # Fjern alle relevante session_state-widget keys
-        for key in oppussing_defaults:
-            del st.session_state[f"opp_{key}"]
         st.session_state["reset_oppussing"] = True
 
 
