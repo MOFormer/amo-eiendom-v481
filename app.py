@@ -55,7 +55,8 @@ oppussing = sum([
     st.session_state["gulv"],
     st.session_state["rørlegger"],
     st.session_state["elektriker"],
-    st.session_state["utvendig"]
+    st.session_state["utvendig"],
+    st.session_state["test"]
 ])
 
 # ✅ Nå vises bare expander – og summen er i tittelen!
