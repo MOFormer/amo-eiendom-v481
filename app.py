@@ -101,9 +101,7 @@ total_investering = kjøpesum + oppussing_total + kjøpskostnader
 st.subheader("✨ Resultat")
 st.metric("Total investering", f"{int(total_investering):,} kr")
 
-# --------------------------
-# Driftskostnader standardverdier
-# --------------------------
+# 1. Definer standardverdier først
 driftskostnader_defaults = {
     "forsikring": 8000,
     "strøm": 12000,
@@ -112,21 +110,17 @@ driftskostnader_defaults = {
     "vedlikehold": 8000,
 }
 
-# --------------------------
-# Init reset-trigger FØR bruk
-# --------------------------
+# 2. Deretter: Init reset-trigger FØR bruk
 if "reset_drift_triggered" not in st.session_state:
     st.session_state["reset_drift_triggered"] = False
 
-# --------------------------
-# Init inputverdier eller reset
-# --------------------------
+# 3. Så: Init inputverdier eller reset
 for key, default in driftskostnader_defaults.items():
     widget_key = f"drift_{key}"
     if widget_key not in st.session_state or st.session_state["reset_drift_triggered"]:
         st.session_state[widget_key] = 0 if st.session_state["reset_drift_triggered"] else default
 
-# Nullstill flagget etter reset
+# 4. Nullstill flagget etter reset
 if st.session_state["reset_drift_triggered"]:
     st.session_state["reset_drift_triggered"] = False
 
