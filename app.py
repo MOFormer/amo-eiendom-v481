@@ -33,9 +33,7 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ Oppussing ------------------
 
-# --------------------------
-# Oppussing standardverdier
-# --------------------------
+# --- Standardverdier ---
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -47,19 +45,26 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# --------------------------
-# Init session state
-# --------------------------
+# --- Init state once ---
 if "oppussing_values" not in st.session_state:
     st.session_state["oppussing_values"] = oppussing_defaults.copy()
 
-if "oppussing_reset_trigger" not in st.session_state:
-    st.session_state["oppussing_reset_trigger"] = False
-
-if st.session_state["oppussing_reset_trigger"]:
+# --- Tilbakestill ---
+if st.sidebar.button("Tilbakestill oppussing"):
     for key in oppussing_defaults:
         st.session_state["oppussing_values"][key] = 0
-    st.session_state["oppussing_reset_trigger"] = False
+
+# --- Beregn total før visning ---
+oppussing_total = sum(st.session_state["oppussing_values"].values())
+
+# --- Vis skjema ---
+with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
+    for key in oppussing_defaults:
+        st.session_state["oppussing_values"][key] = st.number_input(
+            label=key.capitalize(),
+            value=st.session_state["oppussing_values"][key],
+            key=f"opp_{key}"
+        )
 
 # ------------------ OPPUSSING UI ------------------
 
