@@ -30,8 +30,8 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ Oppussing ------------------
 
-# Hent eller sett default-verdier direkte i session_state (usynlig for brukeren)
-defaults = {
+# Standardverdier
+oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
     "kjøkken": 100000,
@@ -39,38 +39,29 @@ defaults = {
     "gulv": 40000,
     "rørlegger": 25000,
     "elektriker": 30000,
-    "utvendig": 20000,
-    "test": 20000  
+    "utvendig": 20000
 }
 
-for key, val in defaults.items():
+# Initier i session_state hvis ikke finnes
+for key, val in oppussing_defaults.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
-# Beregn totalen FØR expander vises
-oppussing = sum([
-    st.session_state["riving"],
-    st.session_state["bad"],
-    st.session_state["kjøkken"],
-    st.session_state["overflate"],
-    st.session_state["gulv"],
-    st.session_state["rørlegger"],
-    st.session_state["elektriker"],
-    st.session_state["utvendig"],
-    st.session_state["test"]
-])
+# Beregn total oppussing før expander
+oppussing = sum([st.session_state[k] for k in oppussing_defaults])
 
-# ✅ Nå vises bare expander – og summen er i tittelen!
+# Vis expander med totalsum
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing):,} kr"):
-    st.session_state["riving"] = st.number_input("Riving", value=st.session_state["riving"])
-    st.session_state["bad"] = st.number_input("Bad", value=st.session_state["bad"])
-    st.session_state["kjøkken"] = st.number_input("Kjøkken", value=st.session_state["kjøkken"])
-    st.session_state["overflate"] = st.number_input("Overflate", value=st.session_state["overflate"])
-    st.session_state["gulv"] = st.number_input("Gulv/lister", value=st.session_state["gulv"])
-    st.session_state["rørlegger"] = st.number_input("Rørlegger", value=st.session_state["rørlegger"])
-    st.session_state["elektriker"] = st.number_input("Elektriker", value=st.session_state["elektriker"])
-    st.session_state["utvendig"] = st.number_input("Utvendig", value=st.session_state["utvendig"])
-    st.session_state["test"] = st.number_input("test", value=st.session_state["test"])
+
+    # Input-feltene
+    for key in oppussing_defaults:
+        st.session_state[key] = st.number_input(key.capitalize(), value=st.session_state[key])
+
+    # 🔄 Reset-knapp
+    if st.button("Tilbakestill oppussing"):
+        for key, val in oppussing_defaults.items():
+            st.session_state[key] = val
+        st.experimental_rerun()
 
 # ------------------ Driftskostnader ------------------
 
