@@ -72,7 +72,10 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
     if st.button("Tilbakestill oppussing"):
         for key, val in oppussing_defaults.items():
             st.session_state[key] = val
-        st.experimental_rerun()  # Rerun kun etter at hele UI er bygget
+       # 🔁 Trygg rerun til slutt i appen
+    if st.session_state.get("rerun_trigger"):
+        st.session_state["rerun_trigger"] = False
+        st.experimental_rerun() 
 # ------------------ Driftskostnader ------------------
 
 # Hent eller sett default-verdier i session_state
