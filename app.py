@@ -83,7 +83,7 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 # --------------------------
 # Kjøpesum og kjøpskostnader
 # --------------------------
-kjøpesum = st.sidebar.number_input("Kjøpesum", value=3000000, step=100000)
+kjøpesum = st.sidebar.number_input("Kjøpesum", value=3000000, step=100000, key="kjøpesum")
 kjøpskostnader = kjøpesum * 0.025
 
 # --------------------------
