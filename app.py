@@ -48,8 +48,8 @@ oppussing = sum([
 # ✅ Vis oppsummering etterpå
 st.sidebar.markdown(f"**🔨 Oppussing: {int(oppussing):,} kr**")
 
-# --------- Driftskostnader med expander ---------
-with st.sidebar.expander("💡 Driftskostnader per år"):
+# --------- Driftskostnader ---------
+with st.sidebar.expander("💡 Driftskostnader"):
     forsikring = st.number_input("Forsikring", value=8_000)
     strøm = st.number_input("Strøm", value=12_000)
     kommunale = st.number_input("Kommunale avgifter", value=9_000)
@@ -57,6 +57,9 @@ with st.sidebar.expander("💡 Driftskostnader per år"):
     vedlikehold = st.number_input("Vedlikehold", value=8_000)
 
 drift = sum([forsikring, strøm, kommunale, internett, vedlikehold])
+
+# ✅ Vis summering
+st.sidebar.markdown(f"**💡 Driftskostnader: {int(drift):,} kr**")
 
 # --------- Lån med expander ---------
 with st.sidebar.expander("🏦 Lån og finansiering"):
