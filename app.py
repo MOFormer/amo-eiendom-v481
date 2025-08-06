@@ -104,7 +104,6 @@ st.metric("Total investering", f"{int(total_investering):,} kr")
 # --------------------------
 # Driftskostnader standardverdier
 # --------------------------
-
 driftskostnader_defaults = {
     "forsikring": 8000,
     "strøm": 12000,
@@ -114,38 +113,38 @@ driftskostnader_defaults = {
 }
 
 # --------------------------
-# Init reset-trigger (før UI)
+# Init reset-trigger
 # --------------------------
 if "reset_drift_triggered" not in st.session_state:
     st.session_state["reset_drift_triggered"] = False
 
 # --------------------------
-# Reset logikk
+# Init verdier eller reset
 # --------------------------
+for key, default in driftskostnader_defaults.items():
+    widget_key = f"drift_{key}"
+    if widget_key not in st.session_state or st.session_state["reset_drift_triggered"]:
+        st.session_state[widget_key] = 0 if st.session_state["reset_drift_triggered"] else default
+
+# Nullstill flagget etter reset
 if st.session_state["reset_drift_triggered"]:
-    for key in driftskostnader_defaults:
-        k = f"drift_{key}"
-        if k in st.session_state:
-            del st.session_state[k]
     st.session_state["reset_drift_triggered"] = False
-    st.experimental_rerun()
 
 # --------------------------
 # Driftskostnader UI
 # --------------------------
 drift_total = 0
 with st.sidebar.expander("📈 Driftskostnader", expanded=True):
-    for key, default in driftskostnader_defaults.items():
+    for key in driftskostnader_defaults:
         widget_key = f"drift_{key}"
         val = st.number_input(
             label=key.capitalize(),
-            value=st.session_state.get(widget_key, default),
+            value=st.session_state[widget_key],
             key=widget_key,
             step=1000,
             format="%d"
         )
-        st.session_state[widget_key] = val  # 🔄 Lagrer eksplisitt
-        drift_total += val  # Summering
+        drift_total += val
 
     # Totalsum i boksen
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
