@@ -116,11 +116,43 @@ driftskostnader_defaults = {
     "vedlikehold": 8000,
 }
 
+# --------------------------
+# Init reset-triggers FØR UI
+# --------------------------
+if "reset_drift_triggered" not in st.session_state:
+    st.session_state["reset_drift_triggered"] = False
+
+# --- Driftskostnader reset ---
+if st.session_state["reset_drift_triggered"]:
+    for key in driftskostnader_defaults:
+        k = f"drift_{key}"
+        if k in st.session_state:
+            del st.session_state[k]
+    st.session_state["reset_drift_triggered"] = False
+    st.experimental_rerun()
+
 
 # --------------------------
 # Driftskostnader UI (samme struktur som oppussing)
 # --------------------------
 
+with st.sidebar.expander("📈 Driftskostnader", expanded=True):
+    drift_total = 0
+    for key, default in driftskostnader_defaults.items():
+        widget_key = f"drift_{key}"
+        val = st.number_input(
+            label=key.capitalize(),
+            value=st.session_state.get(widget_key, default),
+            key=widget_key,
+            step=1000,
+            format="%d"
+        )
+        drift_total += val
+
+    st.markdown(f"**Totalt: {int(drift_total):,} kr**")
+
+    if st.button("Tilbakestill driftskostnader", key="reset_drift"):
+        st.session_state["reset_drift_triggered"] = True
         
 # ------------------ Lån og finansiering ------------------
 drift_total = 0
