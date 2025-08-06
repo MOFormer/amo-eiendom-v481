@@ -30,7 +30,7 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ Oppussing ------------------
 
-# --- Oppussing: standardverdier ---
+# --- Standardverdier for oppussing ---
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -42,33 +42,30 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# --- Init session state første gang ---
-for key, val in oppussing_defaults.items():
-    if f"opp_{key}" not in st.session_state:
-        st.session_state[f"opp_{key}"] = val
-
-# --- Håndter reset-flagg ---
-if st.session_state.get("reset_oppussing", False):
-    for key, val in oppussing_defaults.items():
-        st.session_state[f"opp_{key}"] = val
-    st.session_state["reset_oppussing"] = False
+# --- Tell hvor mange ganger vi har "resettet" ---
+if "opp_reset_count" not in st.session_state:
+    st.session_state["opp_reset_count"] = 0
 
 # ------------------ OPPUSSING UI ------------------
 
-# --- Kalkuler totalsum ---
-oppussing_total = sum(st.session_state[f"opp_{key}"] for key in oppussing_defaults)
+# --- Bruk key som inkluderer reset_count for å tvinge refresh ---
+oppussing_total = 0
 
-with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
+with st.sidebar.expander(f"🔨 Oppussing"):
 
-    for key in oppussing_defaults:
-        st.number_input(
+    for key, val in oppussing_defaults.items():
+        widget_key = f"opp_{key}_{st.session_state.opp_reset_count}"
+        current_val = st.number_input(
             label=key.capitalize(),
-            key=f"opp_{key}"
+            value=val,
+            key=widget_key
         )
+        oppussing_total += current_val
+
+    st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
     if st.button("Tilbakestill oppussing"):
-        st.session_state["reset_oppussing"] = True
-        st.experimental_rerun()  # ✅ Trygt her: etter all UI er bygget
+        st.session_state["opp_reset_count"] += 1  # ← ny key = ny input bygges
 
 
 # ------------------ Driftskostnader ------------------
