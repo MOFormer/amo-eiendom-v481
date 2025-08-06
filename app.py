@@ -39,7 +39,8 @@ defaults = {
     "gulv": 40000,
     "rørlegger": 25000,
     "elektriker": 30000,
-    "utvendig": 20000
+    "utvendig": 20000,
+    "test": 20000  
 }
 
 for key, val in defaults.items():
