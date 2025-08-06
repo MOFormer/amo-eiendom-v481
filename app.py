@@ -120,21 +120,21 @@ driftskostnader_defaults = {
 }
 
 # --------------------------
-# Init reset-trigger
+# Init trigger hvis ikke satt
 # --------------------------
 if "reset_drift_triggered" not in st.session_state:
     st.session_state["reset_drift_triggered"] = False
 
 # --------------------------
-# ✅ Utfør reset og rerun helt først
+# ✅ Riktig sted for reset og rerun
 # --------------------------
 if st.session_state["reset_drift_triggered"]:
     for key in driftskostnader_defaults:
         drift_key = f"drift_{key}"
         if drift_key in st.session_state:
-            del st.session_state[drift_key]  # fjerner gamle verdier
+            del st.session_state[drift_key]
     st.session_state["reset_drift_triggered"] = False
-    st.experimental_rerun()  # må komme før noen widgets vises
+    st.experimental_rerun()
 
 # --------------------------
 # Nå er det trygt å bygge UI
