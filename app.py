@@ -106,35 +106,43 @@ st.metric("Total investering", f"{int(total_investering):,} kr")
 
 # ------------------ Driftskostnader ------------------
 
-# Hent eller sett default-verdier i session_state
-drift_defaults = {
-    "forsikring": 8000,
-    "strøm": 12000,
-    "kommunale": 9000,
-    "internett": 3000,
-    "vedlikehold": 8000
-}
+# --------------------------
+# Driftskostnader UI i sidebar
+# --------------------------
+with st.sidebar.expander("📈 Driftskostnader", expanded=True):
+    drift_total = 0
+    for key in driftskostnader_defaults:
+        widget_key = f"drift_{key}"
+        val = st.number_input(
+            label=key.capitalize(),
+            value=st.session_state[widget_key],
+            key=widget_key,
+            step=1000,
+            format="%d"
+        )
+        drift_total += val
 
-for key, val in drift_defaults.items():
-    if key not in st.session_state:
-        st.session_state[key] = val
+    st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
-# Beregn totalsum før expander vises
-drift = sum([
-    st.session_state["forsikring"],
-    st.session_state["strøm"],
-    st.session_state["kommunale"],
-    st.session_state["internett"],
-    st.session_state["vedlikehold"]
-])
+    if st.button("Tilbakestill driftskostnader", key="reset_drift"):
+        st.session_state["reset_drift_triggered"] = True
+        st.rerun()
 
-# ✅ Expander med totalsum i tittelen
-with st.sidebar.expander(f"💡 Driftskostnader: {int(drift):,} kr"):
-    st.session_state["forsikring"] = st.number_input("Forsikring", value=st.session_state["forsikring"])
-    st.session_state["strøm"] = st.number_input("Strøm", value=st.session_state["strøm"])
-    st.session_state["kommunale"] = st.number_input("Kommunale avgifter", value=st.session_state["kommunale"])
-    st.session_state["internett"] = st.number_input("Internett", value=st.session_state["internett"])
-    st.session_state["vedlikehold"] = st.number_input("Vedlikehold", value=st.session_state["vedlikehold"])
+# --------------------------
+# Kjøpesum og kjøpskostnader
+# --------------------------
+kjøpesum = st.sidebar.number_input("Kjøpesum", value=3000000, step=100000, key="kjøpesum")
+kjøpskostnader = kjøpesum * 0.025
+
+# --------------------------
+# Total investering
+# --------------------------
+oppussing_total = sum(st.session_state[f"opp_{key}"] for key in oppussing_defaults)
+total_investering = kjøpesum + oppussing_total + kjøpskostnader
+
+st.subheader("✨ Resultat")
+st.metric("Total investering", f"{int(total_investering):,} kr")
+
 
 # ------------------ Lån og finansiering ------------------
 
