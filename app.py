@@ -33,7 +33,7 @@ kjøpskostnader = kjøpesum * 0.025
 
 # ------------------ Input ------------------
 st.sidebar.header("Eiendomsinfo")
-kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
+kjøpesum = st.sidebar.number_input("Kjøpesum", value=4_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ Oppussing ------------------
