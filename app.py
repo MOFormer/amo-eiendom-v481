@@ -151,14 +151,12 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
             step=1000,
             format="%d"
         )
-        st.session_state[widget_key] = val  # 🔄 Sørg for lagring
-        drift_total += val
+        drift_total += val  # 👈 Ikke sett session_state manuelt!
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
     if st.button("Tilbakestill driftskostnader", key="reset_drift"):
         st.session_state["reset_drift_triggered"] = True
-
 # --------------------------
 # KJØPESUM OG INVESTERING
 # --------------------------
