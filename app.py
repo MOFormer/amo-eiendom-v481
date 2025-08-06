@@ -57,12 +57,18 @@ if "oppussing_values" not in st.session_state:
 # ------------------ OPPUSSING UI ------------------
 
 # --------------------------
+# Init session state
+# --------------------------
+if "oppussing_values" not in st.session_state:
+    st.session_state["oppussing_values"] = oppussing_defaults.copy()
+
+# --------------------------
 # Sidebar UI - Oppussing
 
 # Kalkuler totalsum først (før ekspander!)
 oppussing_total = sum(st.session_state["oppussing_values"].values())
 
-with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
+with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):,} kr"):
     # Vis inputfelter
     for key in oppussing_defaults:
         st.session_state["oppussing_values"][key] = st.number_input(
@@ -93,7 +99,6 @@ total_investering = kjøpesum + oppussing_total + kjøpskostnader
 
 st.subheader("✨ Resultat")
 st.metric("Total investering", f"{int(total_investering):,} kr")
-
 
 # ------------------ Driftskostnader ------------------
 
