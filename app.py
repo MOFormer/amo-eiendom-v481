@@ -54,13 +54,14 @@ with st.sidebar.expander("💡 Driftskostnader per år"):
 
 drift = sum([forsikring, strøm, kommunale, internett, vedlikehold])
 
-st.sidebar.header("Lån")
-lån = st.sidebar.number_input("Lånebeløp", value=2_700_000)
-rente = st.sidebar.number_input("Rente (%)", value=5.0)
-løpetid = st.sidebar.number_input("Løpetid (år)", value=25)
-avdragsfri = st.sidebar.number_input("Avdragsfri (år)", value=2)
-lånetype = st.sidebar.selectbox("Lånetype", ["Annuitetslån", "Serielån"])
-eierform = st.sidebar.radio("Eierform", ["Privat", "AS"])
+# --------- Lån med expander ---------
+with st.sidebar.expander("🏦 Lån og finansiering"):
+    lån = st.number_input("Lånebeløp", value=2_700_000)
+    rente = st.number_input("Rente (%)", value=5.0)
+    løpetid = st.number_input("Løpetid (år)", value=25)
+    avdragsfri = st.number_input("Avdragsfri (år)", value=2)
+    lånetype = st.selectbox("Lånetype", ["Annuitetslån", "Serielån"])
+    eierform = st.radio("Eierform", ["Privat", "AS"])
 
 # ------------------ Kalkulasjon ------------------
 def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierform):
