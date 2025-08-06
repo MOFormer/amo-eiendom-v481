@@ -107,7 +107,9 @@ st.metric("Total investering", f"{int(total_investering):,} kr")
 # --------------------------
 import streamlit as st
 
-# --- Definer først standardverdier ---
+# --------------------------
+# Standardverdier
+# --------------------------
 driftskostnader_defaults = {
     "forsikring": 8000,
     "strøm": 12000,
@@ -117,12 +119,14 @@ driftskostnader_defaults = {
 }
 
 # --------------------------
-# Init reset-triggers FØR UI
+# Init reset-trigger (før UI)
 # --------------------------
 if "reset_drift_triggered" not in st.session_state:
     st.session_state["reset_drift_triggered"] = False
 
-# --- Driftskostnader reset ---
+# --------------------------
+# Reset logikk
+# --------------------------
 if st.session_state["reset_drift_triggered"]:
     for key in driftskostnader_defaults:
         k = f"drift_{key}"
@@ -131,13 +135,11 @@ if st.session_state["reset_drift_triggered"]:
     st.session_state["reset_drift_triggered"] = False
     st.experimental_rerun()
 
-
 # --------------------------
-# Driftskostnader UI (samme struktur som oppussing)
+# Driftskostnader UI
 # --------------------------
-
+drift_total = 0
 with st.sidebar.expander("📈 Driftskostnader", expanded=True):
-    drift_total = 0
     for key, default in driftskostnader_defaults.items():
         widget_key = f"drift_{key}"
         val = st.number_input(
@@ -147,11 +149,13 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
             step=1000,
             format="%d"
         )
-        drift_total += val
+        drift_total += val  # Summering
 
+    # Totalsum i boksen
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
-    if st.button("Tilbakestill driftskostnader", key="reset_drift"):
+    # Reset-knapp
+    if st.button("Tilbakestill driftskostnader", key="reset_drift_btn"):
         st.session_state["reset_drift_triggered"] = True
         
 # ------------------ Lån og finansiering ------------------
