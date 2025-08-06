@@ -52,6 +52,7 @@ oppussing_defaults = {
 # --------------------------
 if "oppussing_values" not in st.session_state:
     st.session_state["oppussing_values"] = oppussing_defaults.copy()
+
     
 # ------------------ OPPUSSING UI ------------------
 
@@ -60,7 +61,7 @@ if "oppussing_values" not in st.session_state:
 # --------------------------
 st.sidebar.title("Eiendomskalkulator")
 
-with st.sidebar.expander("🔨 Oppussing"):
+with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
     # Vis inputfelter
     for key in oppussing_defaults:
         st.session_state["oppussing_values"][key] = st.number_input(
@@ -71,7 +72,7 @@ with st.sidebar.expander("🔨 Oppussing"):
 
     # Kalkuler totalsum
     oppussing_total = sum(st.session_state["oppussing_values"].values())
-    st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
+    
 
     # Reset-knapp
     if st.button("Tilbakestill oppussing", key="btn_reset_oppussing"):
