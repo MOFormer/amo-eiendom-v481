@@ -49,26 +49,27 @@ if st.session_state.get("reset_oppussing_pending"):
 
 # ------------------ OPPUSSING UI ------------------
 
-# Initier verdier hvis ikke satt
+# Initier session_state ved behov
 for key, val in oppussing_defaults.items():
     st.session_state.setdefault(f"opp_{key}", val)
 
-# Beregn totalsum
+# Kalkuler totalsum
 oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
 
 # Vis expander
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     for key in oppussing_defaults:
-        st.session_state[f"opp_{key}"] = st.number_input(
+        st.number_input(
             key.capitalize(),
             value=st.session_state[f"opp_{key}"],
             key=f"opp_{key}"
         )
 
     if st.button("Tilbakestill oppussing"):
-        st.session_state["reset_oppussing_pending"] = True
-        st.experimental_rerun()  # ← Brukes kun her, etter alle widgets
+        for key, val in oppussing_defaults.items():
+            st.session_state[f"opp_{key}"] = val
+        st.experimental_rerun()  # Kun trygt her
 
 # ------------------ Driftskostnader ------------------
 
