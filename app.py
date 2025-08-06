@@ -153,7 +153,7 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
     if st.button("Tilbakestill driftskostnader", key="reset_drift"):
-    st.session_state["reset_drift_triggered"] = True
+        st.session_state["reset_drift_triggered"] = True
 
 
 # ------------------ Lån og finansiering ------------------
