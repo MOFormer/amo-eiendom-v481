@@ -62,23 +62,14 @@ for key, default in oppussing_defaults.items():
 # --------------------------
 with st.sidebar.expander("🔨 Oppussing", expanded=True):
     total = 0
-    for key in oppussing_defaults:
-        widget_key = f"opp_{key}"
-        val = st.number_input(
-            label=key.capitalize(),
-            value=st.session_state[widget_key],
-            key=widget_key,
-            step=1000
-        )
-        total += val
+    for key, default in oppussing_defaults.items():
+    widget_key = f"opp_{key}"
+    if widget_key not in st.session_state or st.session_state["reset_oppussing_triggered"]:
+        st.session_state[widget_key] = 0 if st.session_state["reset_oppussing_triggered"] else default
 
-    st.markdown(f"**Totalt: {int(total):,} kr**")
-
-    if st.button("Tilbakestill oppussing", key="reset_oppussing"):
-        for key in oppussing_defaults:
-            st.session_state[f"opp_{key}"] = 0
-        st.rerun()
-
+# Nullstill flagget så det ikke fortsetter å nullstille etter første run
+if st.session_state["reset_oppussing_triggered"]:
+    st.session_state["reset_oppussing_triggered"] = False
 # --------------------------
 # Kjøpesum og kjøpskostnader
 # --------------------------
