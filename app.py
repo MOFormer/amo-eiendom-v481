@@ -28,7 +28,8 @@ st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
-# ------------------ OPPUSSING RESET UTEN RERUN ------------------
+# ------------------ OPPUSSING: INIT ------------------
+
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -40,27 +41,26 @@ oppussing_defaults = {
     "utvendig": 20000
 }
 
-# Klargjør verdier om tilbakestilling er aktivert
+# Sett verdier på nytt om reset er trigget
 if st.session_state.get("reset_oppussing_pending"):
     for key, val in oppussing_defaults.items():
         st.session_state[f"opp_{key}"] = val
-    # Ikke kall rerun her! Vi gjør det trygt senere
+    st.session_state["reset_oppussing_pending"] = False
 
 # ------------------ OPPUSSING UI ------------------
 
-# Initier session_state ved behov
+# Initier verdier hvis ikke satt
 for key, val in oppussing_defaults.items():
-    if f"opp_{key}" not in st.session_state:
-        st.session_state[f"opp_{key}"] = val
+    st.session_state.setdefault(f"opp_{key}", val)
 
-# Kalkuler totalsum
+# Beregn totalsum
 oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
 
-# Expander med summen i tittelen
+# Vis expander
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     for key in oppussing_defaults:
-        st.number_input(
+        st.session_state[f"opp_{key}"] = st.number_input(
             key.capitalize(),
             value=st.session_state[f"opp_{key}"],
             key=f"opp_{key}"
@@ -68,13 +68,7 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     if st.button("Tilbakestill oppussing"):
         st.session_state["reset_oppussing_pending"] = True
-        st.session_state["trigger_rerun"] = True  # signaliser rerun
-
-# ------------------ TRYGG RERUN ------------------
-
-if st.session_state.get("trigger_rerun"):
-    st.session_state["trigger_rerun"] = False
-    st.experimental_rerun()
+        st.experimental_rerun()  # ← Brukes kun her, etter alle widgets
 
 # ------------------ Driftskostnader ------------------
 
