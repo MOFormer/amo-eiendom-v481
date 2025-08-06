@@ -64,6 +64,7 @@ with st.sidebar.expander("🔨 Oppussing"):
         oppussing_values[key] = val
 
     oppussing_total = sum(oppussing_values.values())
+    with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
     if st.button("Tilbakestill oppussing"):
