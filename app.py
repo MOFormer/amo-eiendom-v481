@@ -28,8 +28,7 @@ st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
-# ------------------ OPPUSSING DEFAULTS ------------------
-
+# Oppussing defaults
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -41,11 +40,16 @@ oppussing_defaults = {
     "utvendig": 20000
 }
 
-# Hvis reset er aktiv, nullstill verdier – ingen rerun!
+# Init dummy hvis ikke finnes
+if "opp_dummy" not in st.session_state:
+    st.session_state["opp_dummy"] = 0
+
+# Utfør reset hvis flagg er satt
 if st.session_state.get("reset_oppussing"):
     for key, val in oppussing_defaults.items():
         st.session_state[f"opp_{key}"] = val
     st.session_state["reset_oppussing"] = False
+    st.session_state["opp_dummy"] += 1  # trigger rerun via usynlig endring
 
 # ------------------ OPPUSSING UI ------------------
 
@@ -56,7 +60,7 @@ for key, val in oppussing_defaults.items():
 # Kalkuler totalsum
 oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
 
-# Vis ekspander med sum i tittelen
+# Expander med sum
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     for key in oppussing_defaults:
