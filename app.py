@@ -63,12 +63,18 @@ if "oppussing_values" not in st.session_state:
     st.session_state["oppussing_values"] = oppussing_defaults.copy()
 
 # --------------------------
+# Init session state
+# --------------------------
+if "oppussing_values" not in st.session_state:
+    st.session_state["oppussing_values"] = oppussing_defaults.copy()
+
+# --------------------------
 # Sidebar UI - Oppussing
 
 # Kalkuler totalsum først (før ekspander!)
 oppussing_total = sum(st.session_state["oppussing_values"].values())
 
-with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):,} kr"):
+with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
     # Vis inputfelter
     for key in oppussing_defaults:
         st.session_state["oppussing_values"][key] = st.number_input(
