@@ -46,39 +46,29 @@ oppussing_defaults = {
 if "oppussing_values" not in st.session_state:
     st.session_state["oppussing_values"] = oppussing_defaults.copy()
 
-# --- Reset trigger ---
-if "oppussing_reset_trigger" not in st.session_state:
+# --- Utfør reset hvis trigger er aktiv (før UI bygges) ---
+if st.session_state.get("oppussing_reset_trigger", False):
+    st.session_state["oppussing_values"] = {key: 0 for key in oppussing_defaults}
     st.session_state["oppussing_reset_trigger"] = False
+    st.experimental_rerun()  # ✅ Trygt her
 
-# --- Utfør reset om trigger er aktiv ---
-if st.session_state["oppussing_reset_trigger"]:
-    for key in oppussing_defaults:
-        st.session_state["oppussing_values"][key] = 0
-    st.session_state["oppussing_reset_trigger"] = False
+# --- Kalkuler total ---
+oppussing_total = sum(st.session_state["oppussing_values"].values())
 
 # ------------------ OPPUSSING UI ------------------
 
-# --- Visning i sidebar ---
-with st.sidebar.expander("🔨 Oppussing"):
-
-    total = 0
+# --- Oppussing UI i sidebar ---
+with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
     for key in oppussing_defaults:
         val = st.number_input(
             label=key.capitalize(),
             value=st.session_state["oppussing_values"][key],
             key=f"opp_{key}"
         )
-        # Oppdater lagrede verdier
         st.session_state["oppussing_values"][key] = val
-        total += val
-
-    st.markdown(f"**Totalt: {int(total):,} kr**")
 
     if st.button("Tilbakestill oppussing"):
         st.session_state["oppussing_reset_trigger"] = True
-
-# Etter at du har oppdatert alle verdier:
-oppussing_total = sum(st.session_state["oppussing_values"].values())
 
 
 # ------------------ Driftskostnader ------------------
