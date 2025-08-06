@@ -81,12 +81,6 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
         st.session_state["oppussing_reset_trigger"] = True
 
 # --------------------------
-# Kjøpesum og kjøpskostnader
-# --------------------------
-kjøpesum = st.sidebar.number_input("Kjøpesum", value=3000000, step=100000, key="kjøpesum")
-kjøpskostnader = kjøpesum * 0.025
-
-# --------------------------
 # Total investering
 # --------------------------
 total_investering = kjøpesum + oppussing_total + kjøpskostnader
