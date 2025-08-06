@@ -28,8 +28,7 @@ st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
-# ------------------ OPPUSSING: INIT ------------------
-
+# ------------------ OPPUSSING DEFAULTS ------------------
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -41,22 +40,24 @@ oppussing_defaults = {
     "utvendig": 20000
 }
 
-# Sett verdier på nytt om reset er trigget
-if st.session_state.get("reset_oppussing_pending"):
+# ------------------ HÅNDTER TILBAKESTILL ------------------
+if st.session_state.get("reset_oppussing"):
     for key, val in oppussing_defaults.items():
         st.session_state[f"opp_{key}"] = val
-    st.session_state["reset_oppussing_pending"] = False
+    st.session_state["reset_oppussing"] = False
+    st.experimental_rerun()
 
 # ------------------ OPPUSSING UI ------------------
 
-# Initier session_state ved behov
+# Sørg for at alle verdier er i session_state
 for key, val in oppussing_defaults.items():
-    st.session_state.setdefault(f"opp_{key}", val)
+    if f"opp_{key}" not in st.session_state:
+        st.session_state[f"opp_{key}"] = val
 
 # Kalkuler totalsum
 oppussing_total = sum([st.session_state[f"opp_{key}"] for key in oppussing_defaults])
 
-# Vis expander
+# Expander med summering
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
     for key in oppussing_defaults:
@@ -67,9 +68,7 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
         )
 
     if st.button("Tilbakestill oppussing"):
-        for key, val in oppussing_defaults.items():
-            st.session_state[f"opp_{key}"] = val
-        st.experimental_rerun()  # Kun trygt her
+        st.session_state["reset_oppussing"] = True
 
 # ------------------ Driftskostnader ------------------
 
