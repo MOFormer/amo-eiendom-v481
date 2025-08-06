@@ -126,20 +126,18 @@ if "reset_drift_triggered" not in st.session_state:
     st.session_state["reset_drift_triggered"] = False
 
 # --------------------------
-# Utfør reset FØR widgets tegnes
+# ✅ Flytt reset og rerun helt til toppen
 # --------------------------
 if st.session_state["reset_drift_triggered"]:
     for key in driftskostnader_defaults:
         widget_key = f"drift_{key}"
         if widget_key in st.session_state:
-            del st.session_state[widget_key]  # fjern nøkkelen for å få default igjen
+            del st.session_state[widget_key]
     st.session_state["reset_drift_triggered"] = False
-
-    # ❗ Rerun må skje uten at noen widgets er rendret ennå
     st.experimental_rerun()
 
 # --------------------------
-# UI: Driftskostnader
+# Nå er det trygt å bygge UI
 # --------------------------
 with st.sidebar.expander("📈 Driftskostnader", expanded=True):
     drift_total = 0
@@ -158,7 +156,6 @@ with st.sidebar.expander("📈 Driftskostnader", expanded=True):
 
     if st.button("Tilbakestill driftskostnader", key="reset_drift"):
         st.session_state["reset_drift_triggered"] = True
-
 # ------------------ Lån og finansiering ------------------
 
 # Sett standardverdier i session_state
