@@ -113,18 +113,20 @@ driftskostnader_defaults = {
 }
 
 # --------------------------
-# Init reset-trigger
-# --------------------------
-if "reset_drift_triggered" not in st.session_state:
-    st.session_state["reset_drift_triggered"] = False
-
-# --------------------------
 # Init verdier eller reset
 # --------------------------
 for key, default in driftskostnader_defaults.items():
     widget_key = f"drift_{key}"
     if widget_key not in st.session_state or st.session_state["reset_drift_triggered"]:
         st.session_state[widget_key] = 0 if st.session_state["reset_drift_triggered"] else default
+
+# --------------------------
+# Init reset-trigger
+# --------------------------
+if "reset_drift_triggered" not in st.session_state:
+    st.session_state["reset_drift_triggered"] = False
+
+
 
 # Nullstill flagget etter reset
 if st.session_state["reset_drift_triggered"]:
