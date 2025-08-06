@@ -58,13 +58,26 @@ if st.sidebar.button("Tilbakestill oppussing"):
 oppussing_total = sum(st.session_state["oppussing_values"].values())
 
 # --- Vis skjema ---
-with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
+with st.sidebar.expander("🔨 Oppussing"):
+
+    # 1. Vis og oppdater alle inputfelter
     for key in oppussing_defaults:
         st.session_state["oppussing_values"][key] = st.number_input(
             label=key.capitalize(),
             value=st.session_state["oppussing_values"][key],
-            key=f"input_oppussing_{key}"  # 👈 Unik key
+            key=f"input_oppussing_{key}"
         )
+
+    # 2. Kalkuler total etter at feltene er oppdatert
+    oppussing_total = sum(st.session_state["oppussing_values"].values())
+
+    # 3. Vis total inne i boksen
+    st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
+
+    # 4. Reset knapp
+    if st.button("Tilbakestill oppussing", key="btn_reset_oppussing"):
+        for key in oppussing_defaults:
+            st.session_state["oppussing_values"][key] = 0
 
 # ------------------ OPPUSSING UI ------------------
 
