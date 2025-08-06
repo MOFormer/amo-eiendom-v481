@@ -30,9 +30,9 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ OPPUSSING ------------------
 
-# 🔁 Reset-håndtering først (hvis bruker trykket "Tilbakestill oppussing")
+# 🔁 Reset-håndtering hvis bruker trykket "Tilbakestill oppussing"
 if st.session_state.get("reset_oppussing"):
-    for key, val in {
+    oppussing_defaults = {
         "riving": 20000,
         "bad": 120000,
         "kjøkken": 100000,
@@ -41,13 +41,13 @@ if st.session_state.get("reset_oppussing"):
         "rørlegger": 25000,
         "elektriker": 30000,
         "utvendig": 20000
-    }.items():
+    }
+    for key, val in oppussing_defaults.items():
         st.session_state[key] = val
-
     st.session_state["reset_oppussing"] = False
     st.experimental_rerun()
 
-# 📌 Standardverdier
+# 📌 Standardverdier (og for videre bruk i totalberegning)
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -59,24 +59,26 @@ oppussing_defaults = {
     "utvendig": 20000
 }
 
-# 📥 Initier session_state om nødvendig
+# 📥 Initier session_state ved førstegangs kjøring
 for key, val in oppussing_defaults.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
-# 🧮 Beregn totalsum før visning
+# 🧮 Beregn totalsum før ekspander vises
 oppussing_total = sum([st.session_state[k] for k in oppussing_defaults])
 
-# 🧱 Vis expander med total i tittelen
+# 💬 Vis expander med totalsum i tittellinje
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
-    # Inputfeltene
+    # 🔢 Alle inputfeltene
     for key in oppussing_defaults:
         st.session_state[key] = st.number_input(
-            key.capitalize(), value=st.session_state[key], key=f"opp_{key}"
+            key.capitalize(),
+            value=st.session_state[key],
+            key=f"opp_{key}"
         )
 
-    # 🔁 Reset-knapp med trygg mellomlagring
+    # 🔄 Tilbakestill-knapp
     if st.button("Tilbakestill oppussing"):
         st.session_state["reset_oppussing"] = True
 
