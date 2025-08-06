@@ -70,6 +70,7 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing):,} kr"):
     st.session_state["rørlegger"] = st.number_input("Rørlegger", value=st.session_state["rørlegger"])
     st.session_state["elektriker"] = st.number_input("Elektriker", value=st.session_state["elektriker"])
     st.session_state["utvendig"] = st.number_input("Utvendig", value=st.session_state["utvendig"])
+    st.session_state["test"] = st.number_input("test", value=st.session_state["test"])
 
 # ------------------ Driftskostnader ------------------
 
