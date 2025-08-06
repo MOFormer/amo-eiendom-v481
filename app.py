@@ -23,6 +23,12 @@ st.markdown("""
 
 st.title("Eiendomskalkulator – med synlig scrollbar")
 
+# --------------------------
+# Kjøpesum og kjøpskostnader
+# --------------------------
+kjøpesum = st.sidebar.number_input("Kjøpesum", value=3000000, step=100000, key="kjøpesum")
+kjøpskostnader = kjøpesum * 0.025
+
 # ------------------ Input ------------------
 st.sidebar.header("Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=3_000_000, step=100_000)
