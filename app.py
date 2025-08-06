@@ -30,24 +30,7 @@ leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
 
 # ------------------ OPPUSSING ------------------
 
-# 🔁 Reset-håndtering hvis bruker trykket "Tilbakestill oppussing"
-if st.session_state.get("reset_oppussing"):
-    oppussing_defaults = {
-        "riving": 20000,
-        "bad": 120000,
-        "kjøkken": 100000,
-        "overflate": 30000,
-        "gulv": 40000,
-        "rørlegger": 25000,
-        "elektriker": 30000,
-        "utvendig": 20000
-    }
-    for key, val in oppussing_defaults.items():
-        st.session_state[key] = val
-    st.session_state["reset_oppussing"] = False
-    st.experimental_rerun()
-
-# 📌 Standardverdier (og for videre bruk i totalberegning)
+# 1. Standardverdier for oppussing
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -59,18 +42,25 @@ oppussing_defaults = {
     "utvendig": 20000
 }
 
-# 📥 Initier session_state ved førstegangs kjøring
+# 2. Hvis reset er aktivert (via knapp), nullstill verdier og gjør rerun
+if st.session_state.get("reset_oppussing"):
+    for key, val in oppussing_defaults.items():
+        st.session_state[key] = val
+    st.session_state["reset_oppussing"] = False
+    st.experimental_rerun()
+
+# 3. Initier verdier i session_state om de ikke finnes fra før
 for key, val in oppussing_defaults.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
-# 🧮 Beregn totalsum før ekspander vises
+# 4. Beregn total oppussing
 oppussing_total = sum([st.session_state[k] for k in oppussing_defaults])
 
-# 💬 Vis expander med totalsum i tittellinje
+# 5. Vis expander med summen som tittel
 with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
 
-    # 🔢 Alle inputfeltene
+    # 6. Input-felter for hver kategori
     for key in oppussing_defaults:
         st.session_state[key] = st.number_input(
             key.capitalize(),
@@ -78,7 +68,7 @@ with st.sidebar.expander(f"🔨 Oppussing: {int(oppussing_total):,} kr"):
             key=f"opp_{key}"
         )
 
-    # 🔄 Tilbakestill-knapp
+    # 7. Tilbakestill-knapp (setter en flagg-variabel)
     if st.button("Tilbakestill oppussing"):
         st.session_state["reset_oppussing"] = True
 
