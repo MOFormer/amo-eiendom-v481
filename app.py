@@ -126,7 +126,7 @@ if "reset_drift_triggered" not in st.session_state:
     st.session_state["reset_drift_triggered"] = False
 
 # --------------------------
-# 🔁 RESET – må skje før noe UI vises
+# 🔁 RESET – må skje FØR noe annet
 # --------------------------
 if st.session_state["reset_drift_triggered"]:
     for key in driftskostnader_defaults:
