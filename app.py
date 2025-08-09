@@ -7,7 +7,11 @@ st.set_page_config(layout="wide")
 # ------------------ Tittel ------------------
 st.title("Eiendomskalkulator")
 
-# ------------------ Standardverdier ------------------
+# ===========================
+# OPPUSSING – DEL 1 (PLASSER DENNE HØYT I FILEN, FØR UI)
+# ===========================
+
+# Standardverdier for oppussing
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -19,75 +23,55 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# --- Reset-trigger for Oppussing (må være før UI) ---
-if "reset_oppussing_triggered" not in st.session_state:
-    st.session_state["reset_oppussing_triggered"] = False
+# Init styringsflagg
+if "opp_reset_mode" not in st.session_state:
+    st.session_state["opp_reset_mode"] = False
+if "opp_use_zero_defaults" not in st.session_state:
+    st.session_state["opp_use_zero_defaults"] = False
 
-# --- Utfør reset tidlig og rerun trygt ---
-if st.session_state["reset_oppussing_triggered"]:
-    for _key in oppussing_defaults:
-        k = f"opp_{_key}"
-        if k in st.session_state:
-            del st.session_state[k]
-    st.session_state["reset_oppussing_triggered"] = False
+# Håndter reset tidlig (før UI)
+if st.session_state["opp_reset_mode"]:
+    # Fjern eksisterende widget-nøkler slik at de kan få nye startverdier
+    for _k in oppussing_defaults:
+        kk = f"opp_{_k}"
+        if kk in st.session_state:
+            del st.session_state[kk]
+    # Neste init-runde skal bruke nuller
+    st.session_state["opp_use_zero_defaults"] = True
+    st.session_state["opp_reset_mode"] = False
     st.experimental_rerun()
 
-driftskostnader_defaults = {
-    "forsikring": 8000,
-    "strøm": 12000,
-    "kommunale avgifter": 9000,
-    "internett": 3000,
-    "vedlikehold": 8000,
-}
+# Init første-verdier (eller nuller etter reset)
+for _k, _default in oppussing_defaults.items():
+    kk = f"opp_{_k}"
+    if kk not in st.session_state:
+        st.session_state[kk] = 0 if st.session_state["opp_use_zero_defaults"] else _default
 
-# ------------------ Init reset-triggere ------------------
-if "reset_oppussing_triggered" not in st.session_state:
-    st.session_state["reset_oppussing_triggered"] = False
+# Slå av null-modus etter at den er brukt én gang
+if st.session_state["opp_use_zero_defaults"]:
+    st.session_state["opp_use_zero_defaults"] = False
 
-if "reset_drift_triggered" not in st.session_state:
-    st.session_state["reset_drift_triggered"] = False
-
-# ------------------ Oppussing reset ------------------
-for key, default in oppussing_defaults.items():
-    widget_key = f"opp_{key}"
-    if widget_key not in st.session_state or st.session_state["reset_oppussing_triggered"]:
-        st.session_state[widget_key] = 0 if st.session_state["reset_oppussing_triggered"] else default
-if st.session_state["reset_oppussing_triggered"]:
-    st.session_state["reset_oppussing_triggered"] = False
-
-# ------------------ Driftskostnader reset ------------------
-for key, default in driftskostnader_defaults.items():
-    widget_key = f"drift_{key}"
-    if widget_key not in st.session_state or st.session_state["reset_drift_triggered"]:
-        st.session_state[widget_key] = 0 if st.session_state["reset_drift_triggered"] else default
-if st.session_state["reset_drift_triggered"]:
-    st.session_state["reset_drift_triggered"] = False
-
-# ------------------ Sidebar: Kjøp og oppussing ------------------
-st.sidebar.header("🧾 Kjøp og oppussing")
-
-# Kjøpesum
-kjøpesum = st.sidebar.number_input("Kjøpesum", value=4_000_000, step=100_000)
-kjøpskostnader = kjøpesum * 0.025
-
-# Oppussing
+# ===========================
+# OPPUSSING – DEL 2 (UI I SIDEBAR DER DU ØNSKER)
+# ===========================
 oppussing_total = 0
-if st.button("Tilbakestill oppussing", key="reset_oppussing_btn"):
-    st.session_state["reset_oppussing_triggered"] = True
-for key in oppussing_defaults:
-    widget_key = f"opp_{key}"
-    val = st.number_input(
-        label=key.capitalize(),
-        value=st.session_state[widget_key],
-        key=widget_key,
-        step=1000,
-        format="%d"
-    )
+with st.sidebar.expander("🔨 Oppussing", expanded=True):
+    for key in oppussing_defaults:
+        widget_key = f"opp_{key}"
+        val = st.number_input(
+            label=key.capitalize(),
+            value=st.session_state[widget_key],
+            key=widget_key,
+            step=1000,
+            format="%d",
+        )
         oppussing_total += val
+
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
-    if st.button("Tilbakestill oppussing", key="reset_oppussing_btn"):
-        st.session_state["reset_oppussing_triggered"] = True
-        st.experimental_rerun()
+
+    # Kun sett trigger – selve resetten skjer helt øverst før UI
+    if st.button("Tilbakestill oppussing", key="btn_reset_oppussing"):
+        st.session_state["opp_reset_mode"] = True
 
 # Driftskostnader
 drift_total = 0
