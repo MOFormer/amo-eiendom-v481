@@ -62,31 +62,31 @@ def sum_namespace(prefix: str, defaults: dict, ns: int) -> int:
         s += int(st.session_state.get(f"{prefix}_{k}_{ns}", 0) or 0)
     return s
 
-# --- Oppussing: pre-reset (må være før UI) ---
+def sum_namespace(prefix: str, defaults: dict, ns: int) -> int:
+    total = 0
+    for key in defaults:
+        total += int(st.session_state.get(f"{prefix}_{key}_{ns}", 0) or 0)
+    return total
+
+# ---- Oppussing pre-reset ----
 if "opp_ns" not in st.session_state:
     st.session_state["opp_ns"] = 0
-if "opp_zero_mode" not in st.session_state:
-    st.session_state["opp_zero_mode"] = False
-if "opp_pending_reset" not in st.session_state:
-    st.session_state["opp_pending_reset"] = False
+if "opp_reset_request" not in st.session_state:
+    st.session_state["opp_reset_request"] = False
 
-if st.session_state["opp_pending_reset"]:
-    st.session_state["opp_ns"] += 1
-    st.session_state["opp_zero_mode"] = True
-    st.session_state["opp_pending_reset"] = False  # konsumert
+if st.session_state["opp_reset_request"]:
+    st.session_state["opp_ns"] += 1   # nye keys → 0-verdier
+    st.session_state["opp_reset_request"] = False
 
-# --- Drift: pre-reset (må være før UI) ---
+# ---- Driftskostnader pre-reset ----
 if "drift_ns" not in st.session_state:
     st.session_state["drift_ns"] = 0
-if "drift_zero_mode" not in st.session_state:
-    st.session_state["drift_zero_mode"] = False
-if "drift_pending_reset" not in st.session_state:
-    st.session_state["drift_pending_reset"] = False
+if "drift_reset_request" not in st.session_state:
+    st.session_state["drift_reset_request"] = False
 
-if st.session_state["drift_pending_reset"]:
+if st.session_state["drift_reset_request"]:
     st.session_state["drift_ns"] += 1
-    st.session_state["drift_zero_mode"] = True
-    st.session_state["drift_pending_reset"] = False  # konsumert
+    st.session_state["drift_reset_request"] = False
 
 # ===========================
 # 🔨 Oppussing (instant reset uten rerun)
@@ -95,20 +95,25 @@ if st.session_state["drift_pending_reset"]:
 if "opp_ns" not in st.session_state:
     st.session_state["opp_ns"] = 0
 
-# Reset-knapp MÅ komme før expanderen
-if st.sidebar.button("Tilbakestill oppussing", key="btn_reset_opp"):
-    st.session_state["opp_ns"] += 1
-
-ns_opp = st.session_state["opp_ns"]
-opp_title_total = sum_namespace("opp", oppussing_defaults, ns_opp)
-
+# Tittel-sum må beregnes etter pre-reset
+opp_title_total = sum_namespace("opp", oppussing_defaults, st.session_state["opp_ns"])
 with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=True):
+    # Knappen settes inni boksen, men ber bare om reset via flagg
+    st.button(
+        "Tilbakestill oppussing",
+        key="btn_reset_opp",
+        on_click=lambda: st.session_state.__setitem__("opp_reset_request", True),
+    )
+
+    ns = st.session_state["opp_ns"]
     oppussing_total = 0
     for key, default in oppussing_defaults.items():
-        wkey = f"opp_{key}_{ns_opp}"
-        startverdi = st.session_state.get(wkey, 0 if ns_opp > 0 else default)
+        wkey = f"opp_{key}_{ns}"
+        # første runde: default, senere runder: behold skriverens verdi hvis finnes, ellers 0
+        startverdi = st.session_state.get(wkey, default if ns == 0 else 0)
         val = st.number_input(key.capitalize(), value=startverdi, key=wkey, step=1000, format="%d")
         oppussing_total += val
+
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
 
@@ -132,19 +137,22 @@ if "drift_ns" not in st.session_state:
     st.session_state["drift_ns"] = 0
 
 # Reset-knapp FØR expanderen
-if st.sidebar.button("Tilbakestill driftskostnader", key="btn_reset_drift"):
-    st.session_state["drift_ns"] += 1
-
-ns_drift = st.session_state["drift_ns"]
-drift_title_total = sum_namespace("drift", driftskostnader_defaults, ns_drift)
-
+drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_state["drift_ns"])
 with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expanded=True):
+    st.button(
+        "Tilbakestill driftskostnader",
+        key="btn_reset_drift",
+        on_click=lambda: st.session_state.__setitem__("drift_reset_request", True),
+    )
+
+    ns = st.session_state["drift_ns"]
     drift_total = 0
     for key, default in driftskostnader_defaults.items():
-        wkey = f"drift_{key}_{ns_drift}"
-        startverdi = st.session_state.get(wkey, 0 if ns_drift > 0 else default)
+        wkey = f"drift_{key}_{ns}"
+        startverdi = st.session_state.get(wkey, default if ns == 0 else 0)
         val = st.number_input(key.capitalize(), value=startverdi, key=wkey, step=1000, format="%d")
         drift_total += val
+
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
 
