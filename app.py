@@ -148,9 +148,11 @@ if uploaded is not None:
         st.sidebar.error(f"Kunne ikke lese JSON: {e}")
 
 st.sidebar.header("🧾 Eiendomsinfo")
-kjøpesum = st.sidebar.number_input("Kjøpesum", value=4_000_000, step=100_000)
-leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
-kjøpskostnader = kjøpesum * 0.025  # 2.5 % kjøpsomkostninger
+kjøpesum = st.sidebar.number_input("Kjøpesum", value=st.session_state.get("loaded_kjøpesum", 4_000_000), step=100_000)
+leie = st.sidebar.number_input("Leieinntekter / mnd", value=st.session_state.get("loaded_leie", 22_000))
+# rydde opp midlertidige loaded_* etter at de er brukt
+st.session_state.pop("loaded_kjøpesum", None)
+st.session_state.pop("loaded_leie", None)
 
 # ===========================
 # OPPUSSING (RERUN-FREE, ROBUST)
