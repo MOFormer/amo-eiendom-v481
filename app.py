@@ -147,7 +147,7 @@ with st.sidebar.expander(f"💡 Driftskostnader Årlig: {drift_title_total:,} kr
 
     ns = st.session_state["drift_ns"]
     drift_total = 0
-    for key, default in driftskostnader Årlig_defaults.items():
+    for key, default in driftskostnader_defaults.items():
         wkey = f"drift_{key}_{ns}"
         startverdi = st.session_state.get(wkey, default if ns == 0 else 0)
         val = st.number_input(key.capitalize(), value=startverdi, key=wkey, step=1000, format="%d")
