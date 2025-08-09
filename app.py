@@ -261,37 +261,6 @@ st.dataframe(df.head(60), use_container_width=True, height=500)
 
 import altair as alt
 
-st.subheader("Grafer")
-
-# Klargjør data
-df_plot = df[["Måned", "Netto cashflow", "Akk. cashflow"]].copy()
-df_plot.rename(columns={"Måned": "Maaned", "Netto cashflow": "Netto", "Akk. cashflow": "Akk"}, inplace=True)
-
-# Finn første måned der akkumulert >= 0 (break-even)
-break_even_month = None
-for i, val in enumerate(df_plot["Akk"].values, start=1):
-    if val >= 0:
-        break_even_month = i
-        break
-
-# Interaktiv markør (hover)
-hover = alt.selection_single(on="mousemove", nearest=True, fields=["Maaned"], empty="none")
-
-# Søyle: Netto (positiv grønn, negativ rød)
-bars = alt.Chart(df_plot).mark_bar().encode(
-    x=alt.X("Maaned:Q", title="Måned"),
-    y=alt.Y("Netto:Q", title="Netto per måned"),
-    color=alt.condition(
-        alt.datum.Netto >= 0,
-        alt.value("#2e7d32"),  # grønn
-        alt.value("#c62828")   # rød
-    ),
-    tooltip=[
-        alt.Tooltip("Maaned:Q", title="Måned"),
-        alt.Tooltip("Netto:Q", title="Netto", format=",.0f")
-    ]
-)
-
 import altair as alt
 
 st.subheader("Grafer")
