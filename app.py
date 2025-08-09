@@ -416,6 +416,31 @@ st.subheader("Kontantstrøm (første 60 måneder)")
 st.dataframe(df.head(60), use_container_width=True, height=500)
 
 st.subheader("Grafer")
-st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
-st.line_chart(df[["Renter", "Avdrag"]])
-st.line_chart(df["Restgjeld"])
+
+# Altair: splitt i to lag – positive og negative
+df_plot = df[["Måned", "Netto cashflow", "Akk. cashflow"]].copy()
+df_plot.rename(columns={"Måned": "Maaned", "Netto cashflow": "Netto", "Akk. cashflow": "Akk"}, inplace=True)
+
+pos = alt.Chart(df_plot).transform_filter("datum.Netto >= 0").mark_line().encode(
+    x=alt.X("Maaned:Q", title="Måned"),
+    y=alt.Y("Netto:Q", title="Netto cashflow"),
+    color=alt.value("#2e7d32"),  # grønn
+    tooltip=["Maaned","Netto"]
+)
+
+neg = alt.Chart(df_plot).transform_filter("datum.Netto < 0").mark_line().encode(
+    x=alt.X("Maaned:Q"),
+    y=alt.Y("Netto:Q"),
+    color=alt.value("#c62828"),  # rød
+    tooltip=["Maaned","Netto"]
+)
+
+akk = alt.Chart(df_plot).mark_line().encode(
+    x=alt.X("Maaned:Q"),
+    y=alt.Y("Akk:Q", title="Akk. cashflow"),
+    color=alt.value("#1565c0"),  # blå
+    tooltip=["Maaned","Akk"]
+)
+
+st.altair_chart((pos + neg).properties(height=300, width="container"), use_container_width=True)
+st.altair_chart(akk.properties(height=300, width="container"), use_container_width=True)
