@@ -138,7 +138,7 @@ if "drift_ns" not in st.session_state:
 
 # Reset-knapp FØR expanderen
 drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_state["drift_ns"])
-with st.sidebar.expander(f"🏦 Lån: {int(st.session_state['lån']):,} kr", expanded=False):
+with st.sidebar.expander(f"🏦 Drifskostnader: {int(st.session_state['lån']):,} kr", expanded=False):
     st.button(
         "Tilbakestill driftskostnader",
         key="btn_reset_drift",
