@@ -14,7 +14,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("Eiendomskalkulator – med synlig scrollbar")
+st.title("AMO Eiendomskalkulator")
 
 # ------------------ Sidebar: grunninntasting ------------------
 st.sidebar.header("🧾 Eiendomsinfo")
