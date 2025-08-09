@@ -36,7 +36,9 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# Namespace/nonce for å remounte widgets uten rerun
+# ===========================
+# 🔨 Oppussing (instant reset uten rerun)
+# ===========================
 if "opp_ns" not in st.session_state:
     st.session_state["opp_ns"] = 0
 if "opp_zero_mode" not in st.session_state:
@@ -44,6 +46,12 @@ if "opp_zero_mode" not in st.session_state:
 
 oppussing_total = 0
 with st.sidebar.expander("🔨 Oppussing", expanded=True):
+    # 1) Knapp FØR feltene → endrer state før rendering
+    if st.button("Tilbakestill oppussing", key=f"btn_reset_opp_{st.session_state['opp_ns']}"):
+        st.session_state["opp_ns"] += 1         # nye keys → remount
+        st.session_state["opp_zero_mode"] = True
+
+    # 2) Bygg feltene med ev. oppdatert ns/zero-mode
     ns = st.session_state["opp_ns"]
     for key, default in oppussing_defaults.items():
         widget_key = f"opp_{key}_{ns}"
@@ -59,14 +67,9 @@ with st.sidebar.expander("🔨 Oppussing", expanded=True):
 
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
-    if st.button("Tilbakestill oppussing", key=f"btn_reset_opp_{ns}"):
-        st.session_state["opp_ns"] += 1
-        st.session_state["opp_zero_mode"] = True
-
-# Slå av zero-mode etter første render
+# 3) Null ut zero-mode etter at nye felter er vist én gang
 if st.session_state.get("opp_zero_mode", False):
     st.session_state["opp_zero_mode"] = False
-
 # ===========================
 # DRIFTSKOSTNADER (RERUN-FREE, ROBUST)
 # ===========================
@@ -78,6 +81,9 @@ driftskostnader_defaults = {
     "vedlikehold": 8000,
 }
 
+# ===========================
+# 💡 Driftskostnader (instant reset uten rerun)
+# ===========================
 if "drift_ns" not in st.session_state:
     st.session_state["drift_ns"] = 0
 if "drift_zero_mode" not in st.session_state:
@@ -85,6 +91,12 @@ if "drift_zero_mode" not in st.session_state:
 
 drift_total = 0
 with st.sidebar.expander("💡 Driftskostnader", expanded=True):
+    # 1) Knapp FØR feltene
+    if st.button("Tilbakestill driftskostnader", key=f"btn_reset_drift_{st.session_state['drift_ns']}"):
+        st.session_state["drift_ns"] += 1
+        st.session_state["drift_zero_mode"] = True
+
+    # 2) Bygg feltene
     ns = st.session_state["drift_ns"]
     for key, default in driftskostnader_defaults.items():
         widget_key = f"drift_{key}_{ns}"
@@ -100,10 +112,7 @@ with st.sidebar.expander("💡 Driftskostnader", expanded=True):
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
-    if st.button("Tilbakestill driftskostnader", key=f"btn_reset_drift_{ns}"):
-        st.session_state["drift_ns"] += 1
-        st.session_state["drift_zero_mode"] = True
-
+# 3) Slå av zero-mode etter én render
 if st.session_state.get("drift_zero_mode", False):
     st.session_state["drift_zero_mode"] = False
 
