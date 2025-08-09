@@ -138,7 +138,7 @@ drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_
 with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expanded=True):
     # 1) Knapp FØR feltene
     if st.button("Tilbakestill driftskostnader", key=f"btn_reset_drift_{st.session_state['drift_ns']}"):
-    st.session_state["drift_pending_reset"] = True
+        st.session_state["drift_pending_reset"] = True
 
     # 2) Bygg feltene
     ns = st.session_state["drift_ns"]
