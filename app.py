@@ -137,7 +137,7 @@ if "drift_ns" not in st.session_state:
     st.session_state["drift_ns"] = 0
 
 # Reset-knapp FØR expanderen
-drift_title_total = sum_namespace("drift", driftskostnader Årlig_defaults, st.session_state["drift_ns"])
+drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_state["drift_ns"])
 with st.sidebar.expander(f"💡 Driftskostnader Årlig: {drift_title_total:,} kr", expanded=False):
     st.button(
         "Tilbakestill driftskostnader Årlig",
