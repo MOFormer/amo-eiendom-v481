@@ -56,6 +56,32 @@ def sum_namespace(prefix: str, defaults: dict, ns: int) -> int:
         total += int(st.session_state.get(wkey, 0) or 0)
     return total
 
+# --- Oppussing: pre-reset (må være før UI) ---
+if "opp_ns" not in st.session_state:
+    st.session_state["opp_ns"] = 0
+if "opp_zero_mode" not in st.session_state:
+    st.session_state["opp_zero_mode"] = False
+if "opp_pending_reset" not in st.session_state:
+    st.session_state["opp_pending_reset"] = False
+
+if st.session_state["opp_pending_reset"]:
+    st.session_state["opp_ns"] += 1
+    st.session_state["opp_zero_mode"] = True
+    st.session_state["opp_pending_reset"] = False  # konsumert
+
+# --- Drift: pre-reset (må være før UI) ---
+if "drift_ns" not in st.session_state:
+    st.session_state["drift_ns"] = 0
+if "drift_zero_mode" not in st.session_state:
+    st.session_state["drift_zero_mode"] = False
+if "drift_pending_reset" not in st.session_state:
+    st.session_state["drift_pending_reset"] = False
+
+if st.session_state["drift_pending_reset"]:
+    st.session_state["drift_ns"] += 1
+    st.session_state["drift_zero_mode"] = True
+    st.session_state["drift_pending_reset"] = False  # konsumert
+
 # ===========================
 # 🔨 Oppussing (instant reset uten rerun)
 # ===========================
@@ -69,8 +95,7 @@ opp_title_total = sum_namespace("opp", oppussing_defaults, st.session_state["opp
 with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=True):
     # 1) Knapp FØR feltene → endrer state før rendering
     if st.button("Tilbakestill oppussing", key=f"btn_reset_opp_{st.session_state['opp_ns']}"):
-        st.session_state["opp_ns"] += 1         # nye keys → remount
-        st.session_state["opp_zero_mode"] = True
+    st.session_state["opp_pending_reset"] = True
 
     # 2) Bygg feltene med ev. oppdatert ns/zero-mode
     ns = st.session_state["opp_ns"]
@@ -113,8 +138,7 @@ drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_
 with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expanded=True):
     # 1) Knapp FØR feltene
     if st.button("Tilbakestill driftskostnader", key=f"btn_reset_drift_{st.session_state['drift_ns']}"):
-        st.session_state["drift_ns"] += 1
-        st.session_state["drift_zero_mode"] = True
+    st.session_state["drift_pending_reset"] = True
 
     # 2) Bygg feltene
     ns = st.session_state["drift_ns"]
