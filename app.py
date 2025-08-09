@@ -261,8 +261,6 @@ st.dataframe(df.head(60), use_container_width=True, height=500)
 
 import altair as alt
 
-import altair as alt
-
 st.subheader("Grafer")
 
 # Klargjør data
