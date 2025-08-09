@@ -56,6 +56,12 @@ def sum_namespace(prefix: str, defaults: dict, ns: int) -> int:
         total += int(st.session_state.get(wkey, 0) or 0)
     return total
 
+def sum_namespace(prefix: str, defaults: dict, ns: int) -> int:
+    s = 0
+    for k in defaults:
+        s += int(st.session_state.get(f"{prefix}_{k}_{ns}", 0) or 0)
+    return s
+
 # --- Oppussing: pre-reset (må være før UI) ---
 if "opp_ns" not in st.session_state:
     st.session_state["opp_ns"] = 0
@@ -85,34 +91,24 @@ if st.session_state["drift_pending_reset"]:
 # ===========================
 # 🔨 Oppussing (instant reset uten rerun)
 # ===========================
-# Init namespace første gang
+# Init namespace
 if "opp_ns" not in st.session_state:
     st.session_state["opp_ns"] = 0
 
-# Tittel-sum før render (for nåværende ns)
-opp_title_total = sum_namespace("opp", oppussing_defaults, st.session_state["opp_ns"])
+# Reset-knapp MÅ komme før expanderen
+if st.sidebar.button("Tilbakestill oppussing", key="btn_reset_opp"):
+    st.session_state["opp_ns"] += 1
+
+ns_opp = st.session_state["opp_ns"]
+opp_title_total = sum_namespace("opp", oppussing_defaults, ns_opp)
 
 with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=True):
-    # 1) Reset-knapp FØR feltene: oppdater ns direkte
-    if st.button("Tilbakestill oppussing", key="btn_reset_opp"):
-        st.session_state["opp_ns"] += 1   # nye widget-keys -> remount på 0
-    ns = st.session_state["opp_ns"]
-
-    # 2) Bygg feltene med gjeldende ns
     oppussing_total = 0
     for key, default in oppussing_defaults.items():
-        widget_key = f"opp_{key}_{ns}"
-        # Hvis widget ikke finnes ennå (ny ns) => start på 0, ellers behold brukerens verdi
-        startverdi = st.session_state.get(widget_key, 0 if ns > 0 else default)
-        val = st.number_input(
-            label=key.capitalize(),
-            value=startverdi,
-            key=widget_key,
-            step=1000,
-            format="%d",
-        )
+        wkey = f"opp_{key}_{ns_opp}"
+        startverdi = st.session_state.get(wkey, 0 if ns_opp > 0 else default)
+        val = st.number_input(key.capitalize(), value=startverdi, key=wkey, step=1000, format="%d")
         oppussing_total += val
-
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
 
@@ -131,32 +127,24 @@ driftskostnader_defaults = {
 # 💡 Driftskostnader (instant reset uten rerun)
 # ===========================
 # Init namespace første gang
+# Init namespace
 if "drift_ns" not in st.session_state:
     st.session_state["drift_ns"] = 0
 
-# Tittel-sum før render (for nåværende ns)
-drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_state["drift_ns"])
+# Reset-knapp FØR expanderen
+if st.sidebar.button("Tilbakestill driftskostnader", key="btn_reset_drift"):
+    st.session_state["drift_ns"] += 1
+
+ns_drift = st.session_state["drift_ns"]
+drift_title_total = sum_namespace("drift", driftskostnader_defaults, ns_drift)
 
 with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expanded=True):
-    # 1) Reset-knapp FØR feltene: oppdater ns direkte
-    if st.button("Tilbakestill driftskostnader", key="btn_reset_drift"):
-        st.session_state["drift_ns"] += 1
-    ns = st.session_state["drift_ns"]
-
-    # 2) Bygg feltene med gjeldende ns
     drift_total = 0
     for key, default in driftskostnader_defaults.items():
-        widget_key = f"drift_{key}_{ns}"
-        startverdi = st.session_state.get(widget_key, 0 if ns > 0 else default)
-        val = st.number_input(
-            label=key.capitalize(),
-            value=startverdi,
-            key=widget_key,
-            step=1000,
-            format="%d",
-        )
+        wkey = f"drift_{key}_{ns_drift}"
+        startverdi = st.session_state.get(wkey, 0 if ns_drift > 0 else default)
+        val = st.number_input(key.capitalize(), value=startverdi, key=wkey, step=1000, format="%d")
         drift_total += val
-
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
 
