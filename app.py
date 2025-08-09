@@ -95,7 +95,7 @@ opp_title_total = sum_namespace("opp", oppussing_defaults, st.session_state["opp
 with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=True):
     # 1) Knapp FØR feltene → endrer state før rendering
     if st.button("Tilbakestill oppussing", key=f"btn_reset_opp_{st.session_state['opp_ns']}"):
-    st.session_state["opp_pending_reset"] = True
+        st.session_state["opp_pending_reset"] = True
 
     # 2) Bygg feltene med ev. oppdatert ns/zero-mode
     ns = st.session_state["opp_ns"]
