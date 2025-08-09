@@ -60,31 +60,49 @@ with st.sidebar.expander("🔨 Oppussing", expanded=True):
 if st.session_state.get("opp_zero_mode", False):
     # slå av etter at nye widgets er rendret én gang
     st.session_state["opp_zero_mode"] = False
-# Driftskostnader
+# ===========================
+# DRIFTSKOSTNADER (RERUN-FREE, ROBUST)
+# ===========================
+
+# 1) Standardverdier – MÅ stå før bruk
+driftskostnader_defaults = {
+    "forsikring": 8000,
+    "strøm": 12000,
+    "kommunale avgifter": 9000,
+    "internett": 3000,
+    "vedlikehold": 8000,
+}
+
+# 2) Namespace/nonce for widget keys (remounter widgets uten rerun)
+if "drift_ns" not in st.session_state:
+    st.session_state["drift_ns"] = 0
+
+# 3) Reset-modus: om neste render skal starte på 0
+if "drift_zero_mode" not in st.session_state:
+    st.session_state["drift_zero_mode"] = False
+
+# 4) UI
 drift_total = 0
-with st.sidebar.expander("💡 Driftskostnader", expanded=True):
-    for key in driftskostnader_defaults:
-        widget_key = f"drift_{key}"
+with st.sidebar.expander("📈 Driftskostnader", expanded=True):
+    ns = st.session_state["drift_ns"]
+    for key, default in driftskostnader_defaults.items():
+        widget_key = f"drift_{key}_{ns}"  # unikt per runde
+        startverdi = 0 if st.session_state["drift_zero_mode"] else default
         val = st.number_input(
             label=key.capitalize(),
-            value=st.session_state[widget_key],
+            value=startverdi,
             key=widget_key,
             step=1000,
-            format="%d"
+            format="%d",
         )
         drift_total += val
+
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
-    if st.button("Tilbakestill driftskostnader", key="reset_drift_btn"):
-        st.session_state["reset_drift_triggered"] = True
-        st.experimental_rerun()
 
-# Leie
-leie = st.sidebar.number_input("Leieinntekter / mnd", value=22000)
+    if st.button("Tilbakestill driftskostnader", key=f"btn_reset_drift_{ns}"):
+        st.session_state["drift_ns"] += 1
+        st.session_state["drift_zero_mode"] = True
 
-# ------------------ Kalkulasjoner ------------------
-total_investering = kjøpesum + kjøpskostnader + oppussing_total
-
-st.subheader("✨ Resultater")
-st.metric("Total investering", f"{int(total_investering):,} kr")
-st.metric("Brutto yield", f"{(leie * 12 / total_investering) * 100:.2f} %")
-st.metric("Netto yield", f"{((leie * 12 - drift_total) / total_investering) * 100:.2f} %")
+# 5) Slå av zero-mode etter første reset-render
+if st.session_state.get("drift_zero_mode", False):
+    st.session_state["drift_zero_mode"] = False
