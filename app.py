@@ -72,7 +72,8 @@ kjøpskostnader = kjøpesum * 0.025
 
 # Oppussing
 oppussing_total = 0
-with st.sidebar.expander("🔨 Oppussing", expanded=True):
+if st.button("Tilbakestill oppussing", key="reset_oppussing_btn"):
+    st.session_state["reset_oppussing_triggered"] = True
     for key in oppussing_defaults:
         widget_key = f"opp_{key}"
         val = st.number_input(
