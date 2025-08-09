@@ -36,6 +36,19 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
+def _sum_section(prefix: str, defaults: dict, ns: int, zero_mode: bool) -> int:
+    """Summerer verdier for en seksjon før UI rendres.
+    Bruker eksisterende widget-keys hvis de finnes, ellers defaults.
+    Returnerer heltall for pen tittel.
+    """
+    if zero_mode:
+        return 0
+    total = 0
+    for key, default in defaults.items():
+        wkey = f"{prefix}_{key}_{ns}"
+        total += st.session_state.get(wkey, default)
+    return int(total)
+
 # ===========================
 # 🔨 Oppussing (instant reset uten rerun)
 # ===========================
@@ -45,7 +58,8 @@ if "opp_zero_mode" not in st.session_state:
     st.session_state["opp_zero_mode"] = False
 
 oppussing_total = 0
-with st.sidebar.expander("🔨 Oppussing", expanded=True):
+opp_title_total = _sum_section("opp", oppussing_defaults, st.session_state["opp_ns"], st.session_state["opp_zero_mode"])
+with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=True):
     # 1) Knapp FØR feltene → endrer state før rendering
     if st.button("Tilbakestill oppussing", key=f"btn_reset_opp_{st.session_state['opp_ns']}"):
         st.session_state["opp_ns"] += 1         # nye keys → remount
@@ -88,7 +102,8 @@ if "drift_zero_mode" not in st.session_state:
     st.session_state["drift_zero_mode"] = False
 
 drift_total = 0
-with st.sidebar.expander("💡 Driftskostnader", expanded=True):
+drift_title_total = _sum_section("drift", driftskostnader_defaults, st.session_state["drift_ns"], st.session_state["drift_zero_mode"])
+with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expanded=True):
     # 1) Knapp FØR feltene
     if st.button("Tilbakestill driftskostnader", key=f"btn_reset_drift_{st.session_state['drift_ns']}"):
         st.session_state["drift_ns"] += 1
