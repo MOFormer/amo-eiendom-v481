@@ -81,6 +81,72 @@ st.markdown("""
 st.title("AMO Eiendomskalkulator")
 
 # ------------------ Sidebar: grunninntasting ------------------
+st.sidebar.markdown("---")
+st.sidebar.subheader("📁 Prosjektprofiler")
+
+# Navn på prosjekt
+proj_name = st.sidebar.text_input("Prosjektnavn", value=st.session_state.get("current_project_name", ""))
+
+# Lagre aktivt prosjekt til session_state
+if st.sidebar.button("💾 Lagre prosjekt"):
+    # Les aktive verdier
+    active_proj = {
+        "navn": proj_name.strip() or "Uten navn",
+        "kjøpesum": kjøpesum,
+        "leie": leie,
+        "egenkapital": st.session_state.get("egenkapital", 0),
+        "rente": st.session_state.get("rente", 5.0),
+        "løpetid": st.session_state.get("løpetid", 25),
+        "avdragsfri": st.session_state.get("avdragsfri", 0),
+        "lånetype": st.session_state.get("lånetype", "Annuitetslån"),
+        "eierform": st.session_state.get("eierform", "Privat"),
+        "oppussing": read_section_values("opp", oppussing_defaults, st.session_state.get("opp_ns", 0)),
+        "drift": read_section_values("drift", driftskostnader_defaults, st.session_state.get("drift_ns", 0)),
+    }
+    st.session_state["projects"][active_proj["navn"]] = active_proj
+    st.session_state["current_project_name"] = active_proj["navn"]
+    st.sidebar.success(f"Prosjekt lagret: {active_proj['navn']}")
+
+# Velg og last prosjekt fra session_state
+if st.session_state["projects"]:
+    chooser = st.sidebar.selectbox(
+        "Åpne prosjekt",
+        options=["(Velg)"] + sorted(st.session_state["projects"].keys()),
+        index=0,
+        help="Velg et lagret prosjekt for å laste verdier"
+    )
+    if chooser != "(Velg)":
+        if st.sidebar.button("📂 Last valgt prosjekt"):
+            st.session_state["pending_load_profile"] = st.session_state["projects"][chooser]
+
+        if st.sidebar.button("🗑️ Slett valgt prosjekt"):
+            st.session_state["projects"].pop(chooser, None)
+            if st.session_state.get("current_project_name") == chooser:
+                st.session_state["current_project_name"] = ""
+            st.sidebar.warning(f"Slettet: {chooser}")
+
+# Eksporter/importer JSON
+if st.session_state["projects"]:
+    export_json = json.dumps(st.session_state["projects"], ensure_ascii=False, indent=2)
+    st.sidebar.download_button(
+        "⬇️ Last ned alle prosjekter (JSON)",
+        data=export_json.encode("utf-8"),
+        file_name="prosjekter.json",
+        mime="application/json",
+    )
+
+uploaded = st.sidebar.file_uploader("⬆️ Importer prosjekter (JSON)", type=["json"])
+if uploaded is not None:
+    try:
+        data = json.load(uploaded)
+        if isinstance(data, dict):
+            st.session_state["projects"].update(data)
+            st.sidebar.success("Prosjekter importert.")
+        else:
+            st.sidebar.error("Ugyldig JSON-format. Forventet et objekt/dict.")
+    except Exception as e:
+        st.sidebar.error(f"Kunne ikke lese JSON: {e}")
+
 st.sidebar.header("🧾 Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=4_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
