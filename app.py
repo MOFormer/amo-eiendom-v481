@@ -68,6 +68,19 @@ def sum_namespace(prefix: str, defaults: dict, ns: int) -> int:
         total += int(st.session_state.get(f"{prefix}_{key}_{ns}", 0) or 0)
     return total
 
+# --- Ekspander-styring ---
+def expand_section(section: str):
+    st.session_state[f"{section}_expanded"] = True
+
+def reset_and_expand(section: str, reset_flag: str):
+    st.session_state[reset_flag] = True
+    st.session_state[f"{section}_expanded"] = True
+
+# init expander-flagg (start lukket)
+for _flag in ("opp_expanded", "drift_expanded"):
+    if _flag not in st.session_state:
+        st.session_state[_flag] = False
+
 # ---- Oppussing pre-reset ----
 if "opp_ns" not in st.session_state:
     st.session_state["opp_ns"] = 0
@@ -95,23 +108,33 @@ if st.session_state["drift_reset_request"]:
 if "opp_ns" not in st.session_state:
     st.session_state["opp_ns"] = 0
 
-# Tittel-sum må beregnes etter pre-reset
+# Sum for tittelvisning inni boksen (ikke i label)
 opp_title_total = sum_namespace("opp", oppussing_defaults, st.session_state["opp_ns"])
-with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=False):
-    # Knappen settes inni boksen, men ber bare om reset via flagg
+
+with st.sidebar.expander("🔨 Oppussing", expanded=st.session_state["opp_expanded"]):
+    st.caption(f"**Sum oppussing:** {opp_title_total:,} kr")
+
     st.button(
         "Tilbakestill oppussing",
         key="btn_reset_opp",
-        on_click=lambda: st.session_state.__setitem__("opp_reset_request", True),
+        on_click=reset_and_expand,
+        args=("opp", "opp_reset_request"),   # sett reset-flagget og hold åpen
     )
 
     ns = st.session_state["opp_ns"]
     oppussing_total = 0
     for key, default in oppussing_defaults.items():
         wkey = f"opp_{key}_{ns}"
-        # første runde: default, senere runder: behold skriverens verdi hvis finnes, ellers 0
         startverdi = st.session_state.get(wkey, default if ns == 0 else 0)
-        val = st.number_input(key.capitalize(), value=startverdi, key=wkey, step=1000, format="%d")
+        val = st.number_input(
+            key.capitalize(),
+            value=startverdi,
+            key=wkey,
+            step=1000,
+            format="%d",
+            on_change=expand_section,        # <- hold åpen når Enter trykkes
+            args=("opp",),
+        )
         oppussing_total += val
 
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
@@ -138,11 +161,15 @@ if "drift_ns" not in st.session_state:
 
 # Reset-knapp FØR expanderen
 drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_state["drift_ns"])
-with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expanded=False):
+
+with st.sidebar.expander("💡 Driftskostnader", expanded=st.session_state["drift_expanded"]):
+    st.caption(f"**Sum driftskostnader:** {drift_title_total:,} kr")
+
     st.button(
         "Tilbakestill driftskostnader",
         key="btn_reset_drift",
-        on_click=lambda: st.session_state.__setitem__("drift_reset_request", True),
+        on_click=reset_and_expand,
+        args=("drift", "drift_reset_request"),
     )
 
     ns = st.session_state["drift_ns"]
@@ -150,7 +177,15 @@ with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expa
     for key, default in driftskostnader_defaults.items():
         wkey = f"drift_{key}_{ns}"
         startverdi = st.session_state.get(wkey, default if ns == 0 else 0)
-        val = st.number_input(key.capitalize(), value=startverdi, key=wkey, step=1000, format="%d")
+        val = st.number_input(
+            key.capitalize(),
+            value=startverdi,
+            key=wkey,
+            step=1000,
+            format="%d",
+            on_change=expand_section,      # <- hold åpen når Enter trykkes
+            args=("drift",),
+        )
         drift_total += val
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
