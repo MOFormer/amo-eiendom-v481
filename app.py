@@ -67,9 +67,7 @@ with st.sidebar.expander("🔨 Oppussing", expanded=True):
 
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
-# 3) Null ut zero-mode etter at nye felter er vist én gang
-if st.session_state.get("opp_zero_mode", False):
-    st.session_state["opp_zero_mode"] = False
+
 # ===========================
 # DRIFTSKOSTNADER (RERUN-FREE, ROBUST)
 # ===========================
@@ -112,9 +110,6 @@ with st.sidebar.expander("💡 Driftskostnader", expanded=True):
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
-# 3) Slå av zero-mode etter én render
-if st.session_state.get("drift_zero_mode", False):
-    st.session_state["drift_zero_mode"] = False
 
 # ------------------ Lån og finansiering ------------------
 # Standardverdier i state kun første gang
