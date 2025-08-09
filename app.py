@@ -1,6 +1,70 @@
 import streamlit as st
 import pandas as pd
 
+import json
+from io import BytesIO
+import altair as alt
+
+# --- HJELPERE ---
+def sum_namespace(prefix: str, defaults: dict, ns: int) -> int:
+    s = 0
+    for k in defaults:
+        s += int(st.session_state.get(f"{prefix}_{k}_{ns}", 0) or 0)
+    return s
+
+def read_section_values(prefix: str, defaults: dict, ns: int) -> dict:
+    """Les verdier fra aktive (namespacede) inputs i en seksjon."""
+    data = {}
+    for k in defaults:
+        data[k] = int(st.session_state.get(f"{prefix}_{k}_{ns}", 0) or 0)
+    return data
+
+def write_section_values(prefix: str, values: dict, ns: int):
+    """Skriv verdier inn i session_state for en ny namespace-runde (remount)."""
+    for k, v in values.items():
+        st.session_state[f"{prefix}_{k}_{ns}"] = int(v)
+
+# --- Prosjekt-profiler pre-state ---
+if "projects" not in st.session_state:
+    st.session_state["projects"] = {}  # name -> dict
+if "current_project_name" not in st.session_state:
+    st.session_state["current_project_name"] = ""
+
+# --- Pending load (må håndteres før UI bygges) ---
+if "pending_load_profile" not in st.session_state:
+    st.session_state["pending_load_profile"] = None  # dict eller None
+
+if st.session_state["pending_load_profile"] is not None:
+    p = st.session_state["pending_load_profile"]
+
+    # Oppdater grunnfelter
+    st.session_state["loaded_kjøpesum"] = p.get("kjøpesum", 0)
+    st.session_state["loaded_leie"] = p.get("leie", 0)
+    st.session_state["egenkapital"] = p.get("egenkapital", st.session_state.get("egenkapital", 0))
+    st.session_state["rente"] = p.get("rente", st.session_state.get("rente", 5.0))
+    st.session_state["løpetid"] = p.get("løpetid", st.session_state.get("løpetid", 25))
+    st.session_state["avdragsfri"] = p.get("avdragsfri", st.session_state.get("avdragsfri", 0))
+    st.session_state["lånetype"] = p.get("lånetype", st.session_state.get("lånetype", "Annuitetslån"))
+    st.session_state["eierform"] = p.get("eierform", st.session_state.get("eierform", "Privat"))
+
+    # Bump namespaces for å remounte inputs
+    st.session_state["opp_ns"] = st.session_state.get("opp_ns", 0) + 1
+    st.session_state["drift_ns"] = st.session_state.get("drift_ns", 0) + 1
+    opp_ns = st.session_state["opp_ns"]
+    drift_ns = st.session_state["drift_ns"]
+
+    # Skriv inn seksjons-verdier i nye namespace-keys
+    if "oppussing" in p:
+        write_section_values("opp", p["oppussing"], opp_ns)
+    if "drift" in p:
+        write_section_values("drift", p["drift"], drift_ns)
+
+    # Marker valgt navn
+    st.session_state["current_project_name"] = p.get("navn", "")
+
+    # Ferdig
+    st.session_state["pending_load_profile"] = None
+
 # ------------------ Layout og stil ------------------
 st.set_page_config(layout="wide")
 st.markdown("""
