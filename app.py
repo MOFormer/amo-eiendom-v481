@@ -292,50 +292,60 @@ bars = alt.Chart(df_plot).mark_bar().encode(
     ]
 )
 
-# Linje: Akkumulert (egen skala)
-line_akk = alt.Chart(df_plot).mark_line(strokeWidth=2).encode(
-    x="Maaned:Q",
-    y=alt.Y("Akk:Q", title="Akkumulert"),
-    color=alt.value("#1565c0"),
-    tooltip=[
-        alt.Tooltip("Maaned:Q", title="Måned"),
-        alt.Tooltip("Akk:Q", title="Akkumulert", format=",.0f")
-    ]
+import altair as alt
+
+st.subheader("Grafer")
+
+# Klargjør data
+df_plot = df[["Måned", "Netto cashflow", "Akk. cashflow"]].copy()
+df_plot.rename(columns={"Måned": "Maaned", "Netto cashflow": "Netto", "Akk. cashflow": "Akk"}, inplace=True)
+
+# Finn første måned der akkumulert >= 0 (break-even)
+break_even_month = next((i for i, v in enumerate(df_plot["Akk"].values, start=1) if v >= 0), None)
+
+# --- Panel 1: Netto per måned (søyle, grønn/rød) ---
+bars = alt.Chart(df_plot).mark_bar().encode(
+    x=alt.X("Maaned:Q", title="Måned"),
+    y=alt.Y("Netto:Q", title="Netto per måned"),
+    color=alt.condition(alt.datum.Netto >= 0, alt.value("#2e7d32"), alt.value("#c62828")),
+    tooltip=[alt.Tooltip("Maaned:Q", title="Måned"),
+             alt.Tooltip("Netto:Q", title="Netto", format=",.0f")]
 )
 
-# Null-linje
-zero_rule = alt.Chart(pd.DataFrame({"y": [0]})).mark_rule(strokeDash=[4,4], color="#777").encode(y="y:Q")
+zero_rule_top = alt.Chart(pd.DataFrame({"y": [0]})).mark_rule(strokeDash=[4,4], color="#777").encode(y="y:Q")
 
-# Break-even vertikal linje (hvis finnes)
 if break_even_month is not None:
-    be_rule = alt.Chart(pd.DataFrame({"x": [break_even_month]})).mark_rule(color="#ff9800").encode(x="x:Q")
-    be_text = alt.Chart(pd.DataFrame({"x": [break_even_month], "label": ["Break-even"]})).mark_text(
+    be_rule_top = alt.Chart(pd.DataFrame({"x": [break_even_month]})).mark_rule(color="#ff9800").encode(x="x:Q")
+    be_text_top = alt.Chart(pd.DataFrame({"x": [break_even_month], "label": ["Break-even"]})).mark_text(
         dy=-10, color="#ff9800", fontWeight="bold"
     ).encode(x="x:Q", text="label:N")
 else:
-    be_rule = alt.Chart().mark_rule().encode()  # tomt
-    be_text = alt.Chart().mark_text().encode()
+    be_rule_top = alt.Chart().mark_rule().encode()
+    be_text_top = alt.Chart().mark_text().encode()
 
-# Hover-prikk på akk-linjen
-points = line_akk.mark_circle(size=60).encode().add_selection(hover)
-df_plot["Netto_MA12"] = df_plot["Netto"].rolling(12, min_periods=1).mean()
-ma12 = alt.Chart(df_plot).mark_line(strokeDash=[6,3]).encode(
-    x="Maaned:Q",
-    y=alt.Y("Netto_MA12:Q", title="Netto (12m glidende)"),
-    color=alt.value("#7b1fa2"),
-    tooltip=[alt.Tooltip("Netto_MA12:Q", title="Netto 12m", format=",.0f")]
-)
-chart = alt.layer(bars, zero_rule, line_akk, ma12, points, be_rule, be_text).resolve_scale(y='independent').properties(
-    height=340, width="container"
+panel_top = alt.layer(bars, zero_rule_top, be_rule_top, be_text_top).properties(height=260)
+
+# --- Panel 2: Akkumulert cashflow (linje) ---
+line_akk = alt.Chart(df_plot).mark_line(strokeWidth=2, color="#1565c0").encode(
+    x=alt.X("Maaned:Q", title="Måned"),
+    y=alt.Y("Akk:Q", title="Akkumulert cashflow"),
+    tooltip=[alt.Tooltip("Maaned:Q", title="Måned"),
+             alt.Tooltip("Akk:Q", title="Akkumulert", format=",.0f")]
 )
 
-# Sett sammen: uavhengige y-akser for bars og line
-chart = alt.layer(
-    bars, zero_rule, line_akk, points, be_rule, be_text
-).resolve_scale(
-    y='independent'
-).properties(
-    height=340, width="container"
-)
+zero_rule_bottom = alt.Chart(pd.DataFrame({"y": [0]})).mark_rule(strokeDash=[4,4], color="#777").encode(y="y:Q")
 
+if break_even_month is not None:
+    be_rule_bottom = alt.Chart(pd.DataFrame({"x": [break_even_month]})).mark_rule(color="#ff9800").encode(x="x:Q")
+    be_text_bottom = alt.Chart(pd.DataFrame({"x": [break_even_month], "label": ["Break-even"]})).mark_text(
+        dy=-10, color="#ff9800", fontWeight="bold"
+    ).encode(x="x:Q", text="label:N")
+else:
+    be_rule_bottom = alt.Chart().mark_rule().encode()
+    be_text_bottom = alt.Chart().mark_text().encode()
+
+panel_bottom = alt.layer(line_akk, zero_rule_bottom, be_rule_bottom, be_text_bottom).properties(height=260)
+
+# V-stack panelene
+chart = alt.vconcat(panel_top, panel_bottom).resolve_scale(x="shared").properties(width="container")
 st.altair_chart(chart, use_container_width=True)
