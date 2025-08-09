@@ -68,6 +68,16 @@ def sum_namespace(prefix: str, defaults: dict, ns: int) -> int:
         total += int(st.session_state.get(f"{prefix}_{key}_{ns}", 0) or 0)
     return total
 
+# Holder åpne-lukkede tilstander og forrige totalsum
+if "opp_expanded" not in st.session_state:
+    st.session_state["opp_expanded"] = False
+if "drift_expanded" not in st.session_state:
+    st.session_state["drift_expanded"] = False
+if "opp_last_total" not in st.session_state:
+    st.session_state["opp_last_total"] = 0
+if "drift_last_total" not in st.session_state:
+    st.session_state["drift_last_total"] = 0
+
 # ---- Oppussing pre-reset ----
 if "opp_ns" not in st.session_state:
     st.session_state["opp_ns"] = 0
@@ -96,8 +106,12 @@ if "opp_ns" not in st.session_state:
     st.session_state["opp_ns"] = 0
 
 # Tittel-sum må beregnes etter pre-reset
+
 opp_title_total = sum_namespace("opp", oppussing_defaults, st.session_state["opp_ns"])
-with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=False):
+with st.sidebar.expander(
+    f"🔨 Oppussing: {opp_title_total:,} kr",
+    expanded=st.session_state["opp_expanded"]
+):
     # Knappen settes inni boksen, men ber bare om reset via flagg
     st.button(
         "Tilbakestill oppussing",
@@ -107,6 +121,11 @@ with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=Fal
 
     ns = st.session_state["opp_ns"]
     oppussing_total = 0
+# Hvis totalen endret seg (brukeren har redigert), hold boksen åpen fremover
+if oppussing_total != st.session_state["opp_last_total"]:
+    st.session_state["opp_expanded"] = True
+    st.session_state["opp_last_total"] = oppussing_total
+
     for key, default in oppussing_defaults.items():
         wkey = f"opp_{key}_{ns}"
         # første runde: default, senere runder: behold skriverens verdi hvis finnes, ellers 0
@@ -138,7 +157,10 @@ if "drift_ns" not in st.session_state:
 
 # Reset-knapp FØR expanderen
 drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_state["drift_ns"])
-with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expanded=False):
+with st.sidebar.expander(
+    f"💡 Driftskostnader: {drift_title_total:,} kr",
+    expanded=st.session_state["drift_expanded"]
+):
     st.button(
         "Tilbakestill driftskostnader",
         key="btn_reset_drift",
@@ -147,6 +169,11 @@ with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expa
 
     ns = st.session_state["drift_ns"]
     drift_total = 0
+
+if drift_total != st.session_state["drift_last_total"]:
+    st.session_state["drift_expanded"] = True
+    st.session_state["drift_last_total"] = drift_total
+    
     for key, default in driftskostnader_defaults.items():
         wkey = f"drift_{key}_{ns}"
         startverdi = st.session_state.get(wkey, default if ns == 0 else 0)
