@@ -5,37 +5,26 @@ import pandas as pd
 st.set_page_config(layout="wide")
 st.markdown("""
     <style>
-    /* Gjør scrollbaren mer synlig */
-    div[data-testid="stDataFrameScrollable"]::-webkit-scrollbar {
-        width: 50px;
-    }
-
+    /* Gjør scrollbaren mer synlig for dataframe */
+    div[data-testid="stDataFrameScrollable"]::-webkit-scrollbar { width: 16px; }
     div[data-testid="stDataFrameScrollable"]::-webkit-scrollbar-thumb {
-        background-color: #444;
-        border-radius: 50px;
+        background-color: #444; border-radius: 8px;
     }
-
-    div[data-testid="stDataFrameScrollable"]::-webkit-scrollbar-thumb:hover {
-        background-color: #222;
-    }
+    div[data-testid="stDataFrameScrollable"]::-webkit-scrollbar-thumb:hover { background-color: #222; }
     </style>
 """, unsafe_allow_html=True)
 
 st.title("Eiendomskalkulator – med synlig scrollbar")
 
-
-
-# ------------------ Input ------------------
-st.sidebar.header("Eiendomsinfo")
+# ------------------ Sidebar: grunninntasting ------------------
+st.sidebar.header("🧾 Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=4_000_000, step=100_000)
-kjøpskostnader = kjøpesum * 0.025
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
+kjøpskostnader = kjøpesum * 0.025  # 2.5 % kjøpsomkostninger
 
-# ------------------ Oppussing ------------------
-
-# --------------------------
-# Oppussing standardverdier
-# --------------------------
+# ===========================
+# OPPUSSING (RERUN-FREE, ROBUST)
+# ===========================
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -47,61 +36,40 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# --------------------------
-# Init input-verdier i session_state og reset trigger
-# --------------------------
-if "reset_oppussing_triggered" not in st.session_state:
-    st.session_state["reset_oppussing_triggered"] = False
+# Namespace/nonce for å remounte widgets uten rerun
+if "opp_ns" not in st.session_state:
+    st.session_state["opp_ns"] = 0
+if "opp_zero_mode" not in st.session_state:
+    st.session_state["opp_zero_mode"] = False
 
-for key, default in oppussing_defaults.items():
-    widget_key = f"opp_{key}"
-    if widget_key not in st.session_state or st.session_state["reset_oppussing_triggered"]:
-        st.session_state[widget_key] = 0 if st.session_state["reset_oppussing_triggered"] else default
-
-# Nullstill flagget etter reset
-if st.session_state["reset_oppussing_triggered"]:
-    st.session_state["reset_oppussing_triggered"] = False
-
-    
-# ------------------ OPPUSSING UI ------------------
-
-# --------------------------
-# Oppussing UI i sidebar
-# --------------------------
-with st.sidebar.expander("📈 Driftskostnader", expanded=True):
-    drift_total = 0
-    for key, default in driftskostnader_defaults.items():
-        widget_key = f"drift_input_{key}"  # <- endret
+oppussing_total = 0
+with st.sidebar.expander("🔨 Oppussing", expanded=True):
+    ns = st.session_state["opp_ns"]
+    for key, default in oppussing_defaults.items():
+        widget_key = f"opp_{key}_{ns}"
+        startverdi = 0 if st.session_state["opp_zero_mode"] else default
         val = st.number_input(
             label=key.capitalize(),
-            value=st.session_state.get(widget_key, default),
+            value=startverdi,
             key=widget_key,
             step=1000,
-            format="%d"
+            format="%d",
         )
-        drift_total += val
+        oppussing_total += val
 
-    st.markdown(f"**Totalt: {int(drift_total):,} kr**")
+    st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
-    if st.button("Tilbakestill driftskostnader", key="reset_drift_btn"):
-        st.session_state["reset_drift_triggered"] = True
+    if st.button("Tilbakestill oppussing", key=f"btn_reset_opp_{ns}"):
+        st.session_state["opp_ns"] += 1
+        st.session_state["opp_zero_mode"] = True
 
-# --------------------------
-# Kjøpesum og kjøpskostnader
-# --------------------------
-kjøpesum = st.sidebar.number_input("Kjøpesum", value=3000000, step=100000, key="kjøpesum")
-kjøpskostnader = kjøpesum * 0.025
+# Slå av zero-mode etter første render
+if st.session_state.get("opp_zero_mode", False):
+    st.session_state["opp_zero_mode"] = False
 
-# --------------------------
-# Total investering
-# --------------------------
-oppussing_total = sum(st.session_state[f"opp_{key}"] for key in oppussing_defaults)
-total_investering = kjøpesum + oppussing_total + kjøpskostnader
-
-st.subheader("✨ Resultat")
-st.metric("Total investering", f"{int(total_investering):,} kr")
-
-# 1. Definer standardverdier først
+# ===========================
+# DRIFTSKOSTNADER (RERUN-FREE, ROBUST)
+# ===========================
 driftskostnader_defaults = {
     "forsikring": 8000,
     "strøm": 12000,
@@ -110,132 +78,98 @@ driftskostnader_defaults = {
     "vedlikehold": 8000,
 }
 
-# 2. Deretter: Init reset-trigger FØR bruk
-if "reset_drift_triggered" not in st.session_state:
-    st.session_state["reset_drift_triggered"] = False
+if "drift_ns" not in st.session_state:
+    st.session_state["drift_ns"] = 0
+if "drift_zero_mode" not in st.session_state:
+    st.session_state["drift_zero_mode"] = False
 
-# 3. Så: Init inputverdier eller reset
-for key, default in driftskostnader_defaults.items():
-    widget_key = f"drift_{key}"
-    if widget_key not in st.session_state or st.session_state["reset_drift_triggered"]:
-        st.session_state[widget_key] = 0 if st.session_state["reset_drift_triggered"] else default
-
-# 4. Nullstill flagget etter reset
-if st.session_state["reset_drift_triggered"]:
-    st.session_state["reset_drift_triggered"] = False
-
-# --------------------------
-# Driftskostnader UI
-# --------------------------
 drift_total = 0
-with st.sidebar.expander("📈 Driftskostnader", expanded=True):
-    for key in driftskostnader_defaults:
-        widget_key = f"drift_{key}"
-        val = st.number_input(
-            label=key.capitalize(),
-            value=st.session_state[widget_key],
-            key=widget_key,
-            step=1000,
-            format="%d"
-        )
-        drift_total += val
-
-    st.markdown(f"**Totalt: {int(drift_total):,} kr**")
-
-    if st.button("Tilbakestill driftskostnader", key="reset_drift_btn"):
-        st.session_state["reset_drift_triggered"] = True
-        
-# ------------------ Lån og finansiering ------------------
-drift_total = 0
-with st.sidebar.expander("📈 Driftskostnader", expanded=True):
+with st.sidebar.expander("💡 Driftskostnader", expanded=True):
+    ns = st.session_state["drift_ns"]
     for key, default in driftskostnader_defaults.items():
-        widget_key = f"drift_{key}"
+        widget_key = f"drift_{key}_{ns}"
+        startverdi = 0 if st.session_state["drift_zero_mode"] else default
         val = st.number_input(
             label=key.capitalize(),
-            value=st.session_state.get(widget_key, default),
+            value=startverdi,
             key=widget_key,
             step=1000,
-            format="%d"
+            format="%d",
         )
         drift_total += val
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
-    if st.button("Tilbakestill driftskostnader", key="reset_drift"):
-        for key in driftskostnader_defaults:
-            widget_key = f"drift_{key}"
-            if widget_key in st.session_state:
-                del st.session_state[widget_key]
-        st.experimental_rerun()
-# Sett standardverdier i session_state
+    if st.button("Tilbakestill driftskostnader", key=f"btn_reset_drift_{ns}"):
+        st.session_state["drift_ns"] += 1
+        st.session_state["drift_zero_mode"] = True
+
+if st.session_state.get("drift_zero_mode", False):
+    st.session_state["drift_zero_mode"] = False
+
+# ------------------ Lån og finansiering ------------------
+# Standardverdier i state kun første gang
 lån_defaults = {
     "egenkapital": 300000,
     "rente": 5.0,
     "løpetid": 25,
     "avdragsfri": 2,
     "lånetype": "Annuitetslån",
-    "eierform": "Privat"
+    "eierform": "Privat",
 }
+for k, v in lån_defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
 
-for key, val in lån_defaults.items():
-    if key not in st.session_state:
-        st.session_state[key] = val
+# Total investering nå
+total_investering = kjøpesum + kjøpskostnader + oppussing_total
+lånebeløp = max(total_investering - st.session_state["egenkapital"], 0)
+st.session_state["lån"] = lånebeløp  # tilgjengelig for beregning
 
-# Beregn lånebeløp fra kjøpesum og oppussing (hentet fra tidligere i appen)
-kjøpskostnader = st.session_state.get("kjøpskostnader", 0)
-total_investering = st.session_state.get("total_investering", 3_000_000 + 500_000 + 75_000)  # fallback
-lånebeløp = total_investering - st.session_state["egenkapital"]
-
-# Lagre beregnet lånebeløp
-st.session_state["lån"] = lånebeløp
-
-# ✅ Expander med lånebeløp i tittel
-with st.sidebar.expander(f"🏦 Lån: {int(st.session_state['lån']):,} kr"):
-
+with st.sidebar.expander(f"🏦 Lån: {int(st.session_state['lån']):,} kr", expanded=True):
     st.session_state["egenkapital"] = st.number_input(
-        "Egenkapital", value=st.session_state["egenkapital"], min_value=0
+        "Egenkapital", value=st.session_state["egenkapital"], min_value=0, step=10000
     )
+    # oppdater lånebeløp live
+    st.session_state["lån"] = max(total_investering - st.session_state["egenkapital"], 0)
 
-    # Oppdater lånebeløp når egenkapital endres
-    st.session_state["lån"] = total_investering - st.session_state["egenkapital"]
+    st.session_state["rente"]     = st.number_input("Rente (%)", value=st.session_state["rente"], step=0.1)
+    st.session_state["løpetid"]   = st.number_input("Løpetid (år)", value=st.session_state["løpetid"], step=1, min_value=1)
+    st.session_state["avdragsfri"]= st.number_input("Avdragsfri (år)", value=st.session_state["avdragsfri"], step=1, min_value=0)
+    st.session_state["lånetype"]  = st.selectbox("Lånetype", ["Annuitetslån", "Serielån"],
+                                  index=["Annuitetslån", "Serielån"].index(st.session_state["lånetype"]))
+    st.session_state["eierform"]  = st.radio("Eierform", ["Privat", "AS"],
+                                  index=["Privat", "AS"].index(st.session_state["eierform"]))
 
-    st.session_state["rente"] = st.number_input("Rente (%)", value=st.session_state["rente"], step=0.1)
-    st.session_state["løpetid"] = st.number_input("Løpetid (år)", value=st.session_state["løpetid"], step=1)
-    st.session_state["avdragsfri"] = st.number_input("Avdragsfri (år)", value=st.session_state["avdragsfri"], step=1)
-    st.session_state["lånetype"] = st.selectbox("Lånetype", ["Annuitetslån", "Serielån"], 
-                                                index=["Annuitetslån", "Serielån"].index(st.session_state["lånetype"]))
-    st.session_state["eierform"] = st.radio("Eierform", ["Privat", "AS"], 
-                                             index=["Privat", "AS"].index(st.session_state["eierform"]))
-
-# ------------------ Kalkulasjon ------------------
+# ------------------ Lånekalkyle ------------------
 def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierform):
-    n = int(løpetid * 12)
+    n  = int(løpetid * 12)
     af = int(avdragsfri * 12)
-    r = rente / 100 / 12
+    r  = rente / 100 / 12
 
-    if lånetype == "Annuitetslån" and r > 0:
+    if lånetype == "Annuitetslån" and r > 0 and (n - af) > 0:
         terminbeløp = lån * (r * (1 + r)**(n - af)) / ((1 + r)**(n - af) - 1)
     else:
         terminbeløp = lån / (n - af) if (n - af) > 0 else 0
 
     saldo = lån
     restgjeld, avdrag, renter_liste, netto_cf, akk_cf = [], [], [], [], []
-    akk = 0
+    akk = 0.0
 
     for m in range(n):
         rente_mnd = saldo * r
         if m < af:
-            avdrag_mnd = 0
+            avdrag_mnd = 0.0
             termin = rente_mnd
-        elif lånetype == "Serielån":
+        elif lånetype == "Serielån" and (n - af) > 0:
             avdrag_mnd = lån / (n - af)
             termin = avdrag_mnd + rente_mnd
         else:
             avdrag_mnd = terminbeløp - rente_mnd
             termin = terminbeløp
 
-        saldo -= avdrag_mnd
-        netto = leie - (drift / 12) - termin
+        saldo = max(saldo - avdrag_mnd, 0.0)
+        netto = leie - (drift / 12.0) - termin
         if eierform == "AS" and netto > 0:
             netto *= (1 - 0.375)
         akk += netto
@@ -254,12 +188,9 @@ def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierf
         "Netto cashflow": netto_cf,
         "Akk. cashflow": akk_cf
     })
-
     return df, akk
 
-# ------------------ Beregning ------------------
-kjøpskostnader = kjøpesum * 0.025
-total_investering = kjøpesum + oppussing_total + kjøpskostnader
+# ------------------ Beregning / Resultater ------------------
 df, akk = beregn_lån(
     st.session_state["lån"],
     st.session_state["rente"],
@@ -271,17 +202,14 @@ df, akk = beregn_lån(
     st.session_state["eierform"]
 )
 
-# ------------------ Resultater ------------------
-st.subheader("Resultater")
+st.subheader("✨ Resultater")
 st.metric("Total investering", f"{int(total_investering):,} kr")
 st.metric("Brutto yield", f"{(leie * 12 / total_investering) * 100:.2f} %")
 st.metric("Netto yield", f"{((leie * 12 - drift_total) / total_investering) * 100:.2f} %")
 
-# ------------------ Scrollbar (synlig) med st.dataframe ------------------
 st.subheader("Kontantstrøm (første 60 måneder)")
 st.dataframe(df.head(60), use_container_width=True, height=500)
 
-# ------------------ Grafer ------------------
 st.subheader("Grafer")
 st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
 st.line_chart(df[["Renter", "Avdrag"]])
