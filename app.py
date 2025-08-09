@@ -246,6 +246,32 @@ with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=Tru
 
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
+st.markdown("### 📤 Eksporter kontantstrøm")
+# CSV
+csv_bytes = df.to_csv(index=False).encode("utf-8")
+st.download_button(
+    "Last ned CSV",
+    data=csv_bytes,
+    file_name="kontantstrom.csv",
+    mime="text/csv",
+)
+
+# Excel
+buffer = BytesIO()
+with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+    df.to_excel(writer, index=False, sheet_name="Kontantstrøm")
+    # (valgfritt) auto-width
+    for i, col in enumerate(df.columns):
+        width = max(12, min(40, int(df[col].astype(str).str.len().max() or 12)))
+        writer.sheets["Kontantstrøm"].set_column(i, i, width)
+buffer.seek(0)
+st.download_button(
+    "Last ned Excel",
+    data=buffer,
+    file_name="kontantstrom.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+)
+
 
 # ===========================
 # DRIFTSKOSTNADER (RERUN-FREE, ROBUST)
