@@ -120,7 +120,7 @@ with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=Fal
 # ===========================
 # DRIFTSKOSTNADER (RERUN-FREE, ROBUST)
 # ===========================
-driftskostnader_defaults = {
+driftskostnader Årlig_defaults = {
     "forsikring": 8000,
     "strøm": 12000,
     "kommunale avgifter": 9000,
@@ -137,17 +137,17 @@ if "drift_ns" not in st.session_state:
     st.session_state["drift_ns"] = 0
 
 # Reset-knapp FØR expanderen
-drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_state["drift_ns"])
-with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expanded=False):
+drift_title_total = sum_namespace("drift", driftskostnader Årlig_defaults, st.session_state["drift_ns"])
+with st.sidebar.expander(f"💡 Driftskostnader Årlig: {drift_title_total:,} kr", expanded=False):
     st.button(
-        "Tilbakestill driftskostnader",
+        "Tilbakestill driftskostnader Årlig",
         key="btn_reset_drift",
         on_click=lambda: st.session_state.__setitem__("drift_reset_request", True),
     )
 
     ns = st.session_state["drift_ns"]
     drift_total = 0
-    for key, default in driftskostnader_defaults.items():
+    for key, default in driftskostnader Årlig_defaults.items():
         wkey = f"drift_{key}_{ns}"
         startverdi = st.session_state.get(wkey, default if ns == 0 else 0)
         val = st.number_input(key.capitalize(), value=startverdi, key=wkey, step=1000, format="%d")
