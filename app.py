@@ -19,6 +19,19 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
+# --- Reset-trigger for Oppussing (må være før UI) ---
+if "reset_oppussing_triggered" not in st.session_state:
+    st.session_state["reset_oppussing_triggered"] = False
+
+# --- Utfør reset tidlig og rerun trygt ---
+if st.session_state["reset_oppussing_triggered"]:
+    for _key in oppussing_defaults:
+        k = f"opp_{_key}"
+        if k in st.session_state:
+            del st.session_state[k]
+    st.session_state["reset_oppussing_triggered"] = False
+    st.experimental_rerun()
+
 driftskostnader_defaults = {
     "forsikring": 8000,
     "strøm": 12000,
