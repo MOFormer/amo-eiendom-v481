@@ -318,6 +318,16 @@ else:
 
 # Hover-prikk på akk-linjen
 points = line_akk.mark_circle(size=60).encode().add_selection(hover)
+df_plot["Netto_MA12"] = df_plot["Netto"].rolling(12, min_periods=1).mean()
+ma12 = alt.Chart(df_plot).mark_line(strokeDash=[6,3]).encode(
+    x="Maaned:Q",
+    y=alt.Y("Netto_MA12:Q", title="Netto (12m glidende)"),
+    color=alt.value("#7b1fa2"),
+    tooltip=[alt.Tooltip("Netto_MA12:Q", title="Netto 12m", format=",.0f")]
+)
+chart = alt.layer(bars, zero_rule, line_akk, ma12, points, be_rule, be_text).resolve_scale(y='independent').properties(
+    height=340, width="container"
+)
 
 # Sett sammen: uavhengige y-akser for bars og line
 chart = alt.layer(
