@@ -138,9 +138,9 @@ if "drift_ns" not in st.session_state:
 
 # Reset-knapp FØR expanderen
 drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_state["drift_ns"])
-with st.sidebar.expander(f"💡 Driftskostnader Årlig: {drift_title_total:,} kr", expanded=False):
+with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expanded=False):
     st.button(
-        "Tilbakestill driftskostnader Årlig",
+        "Tilbakestill driftskostnader",
         key="btn_reset_drift",
         on_click=lambda: st.session_state.__setitem__("drift_reset_request", True),
     )
@@ -259,69 +259,7 @@ st.metric("Netto yield", f"{((leie * 12 - drift_total) / total_investering) * 10
 st.subheader("Kontantstrøm (første 60 måneder)")
 st.dataframe(df.head(60), use_container_width=True, height=500)
 
-import altair as alt
-
 st.subheader("Grafer")
-
-# Klargjør data trygt
-df_plot = df.loc[:, ["Måned", "Netto cashflow", "Akk. cashflow"]].copy()
-df_plot.columns = ["Maaned", "Netto", "Akk"]
-# Sørg for riktige typer
-df_plot["Maaned"] = pd.to_numeric(df_plot["Maaned"], errors="coerce")
-df_plot["Netto"] = pd.to_numeric(df_plot["Netto"], errors="coerce")
-df_plot["Akk"]   = pd.to_numeric(df_plot["Akk"], errors="coerce")
-df_plot = df_plot.dropna(subset=["Maaned", "Netto", "Akk"])
-
-# Finn første måned der akk >= 0 (break-even)
-break_even_month = next((int(i) for i, v in zip(df_plot["Maaned"], df_plot["Akk"]) if v >= 0), None)
-
-# --- Panel 1: Netto per måned (søyle, grønn/rød) ---
-bars = alt.Chart(df_plot).mark_bar().encode(
-    x=alt.X("Maaned:Q", title="Måned"),
-    y=alt.Y("Netto:Q", title="Netto per måned"),
-    color=alt.condition(alt.datum.Netto >= 0, alt.value("#2e7d32"), alt.value("#c62828")),
-    tooltip=[
-        alt.Tooltip("Maaned:Q", title="Måned"),
-        alt.Tooltip("Netto:Q", title="Netto", format=",.0f")
-    ]
-)
-
-zero_rule_top = alt.Chart(pd.DataFrame({"y": [0]})).mark_rule(strokeDash=[4,4], color="#777").encode(
-    y="y:Q"
-)
-
-layers_top = [bars, zero_rule_top]
-if break_even_month is not None:
-    be_df = pd.DataFrame({"x": [break_even_month], "label": ["Break-even"]})
-    layers_top.append(alt.Chart(be_df).mark_rule(color="#ff9800").encode(x="x:Q"))
-    layers_top.append(alt.Chart(be_df).mark_text(dy=-10, color="#ff9800", fontWeight="bold").encode(
-        x="x:Q", text="label:N"
-    ))
-panel_top = alt.layer(*layers_top).properties(height=260, width=700)
-
-# --- Panel 2: Akkumulert cashflow (linje) ---
-line_akk = alt.Chart(df_plot).mark_line(strokeWidth=2, color="#1565c0").encode(
-    x=alt.X("Maaned:Q", title="Måned"),
-    y=alt.Y("Akk:Q", title="Akkumulert cashflow"),
-    tooltip=[
-        alt.Tooltip("Maaned:Q", title="Måned"),
-        alt.Tooltip("Akk:Q", title="Akkumulert", format=",.0f")
-    ]
-)
-
-zero_rule_bottom = alt.Chart(pd.DataFrame({"y": [0]})).mark_rule(strokeDash=[4,4], color="#777").encode(
-    y="y:Q"
-)
-
-layers_bottom = [line_akk, zero_rule_bottom]
-if break_even_month is not None:
-    be_df2 = pd.DataFrame({"x": [break_even_month], "label": ["Break-even"]})
-    layers_bottom.append(alt.Chart(be_df2).mark_rule(color="#ff9800").encode(x="x:Q"))
-    layers_bottom.append(alt.Chart(be_df2).mark_text(dy=-10, color="#ff9800", fontWeight="bold").encode(
-        x="x:Q", text="label:N"
-    ))
-panel_bottom = alt.layer(*layers_bottom).properties(height=260, width=700)
-
-# V-stack panelene (del x-akse), bredde skaleres av Streamlit
-chart = alt.vconcat(panel_top, panel_bottom).resolve_scale(x="shared")
-st.altair_chart(chart, use_container_width=True)
+st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
+st.line_chart(df[["Renter", "Avdrag"]])
+st.line_chart(df["Restgjeld"])
