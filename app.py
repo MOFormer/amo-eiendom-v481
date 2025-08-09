@@ -97,7 +97,7 @@ if "opp_ns" not in st.session_state:
 
 # Tittel-sum må beregnes etter pre-reset
 opp_title_total = sum_namespace("opp", oppussing_defaults, st.session_state["opp_ns"])
-with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=True):
+with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=False):
     # Knappen settes inni boksen, men ber bare om reset via flagg
     st.button(
         "Tilbakestill oppussing",
@@ -138,7 +138,7 @@ if "drift_ns" not in st.session_state:
 
 # Reset-knapp FØR expanderen
 drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_state["drift_ns"])
-with st.sidebar.expander(f"💡 Driftskostnader: {drift_title_total:,} kr", expanded=True):
+with st.sidebar.expander(f"🏦 Lån: {int(st.session_state['lån']):,} kr", expanded=False):
     st.button(
         "Tilbakestill driftskostnader",
         key="btn_reset_drift",
