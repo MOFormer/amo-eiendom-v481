@@ -120,7 +120,7 @@ with st.sidebar.expander(f"🔨 Oppussing: {opp_title_total:,} kr", expanded=Fal
 # ===========================
 # DRIFTSKOSTNADER (RERUN-FREE, ROBUST)
 # ===========================
-driftskostnaderllll_defaults = {
+driftskostnader_defaults = {
     "forsikring": 8000,
     "strøm": 12000,
     "kommunale avgifter": 9000,
