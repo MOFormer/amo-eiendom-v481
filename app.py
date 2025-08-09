@@ -8,10 +8,10 @@ st.set_page_config(layout="wide")
 st.title("Eiendomskalkulator")
 
 # ===========================
-# OPPUSSING – DEL 1 (PLASSER DENNE HØYT I FILEN, FØR UI)
+# OPPUSSING (RERUN-FREE, ROBUST)
 # ===========================
 
-# Standardverdier for oppussing
+# 1) Standardverdier
 oppussing_defaults = {
     "riving": 20000,
     "bad": 120000,
@@ -23,44 +23,25 @@ oppussing_defaults = {
     "utvendig": 20000,
 }
 
-# Init styringsflagg
-if "opp_reset_mode" not in st.session_state:
-    st.session_state["opp_reset_mode"] = False
-if "opp_use_zero_defaults" not in st.session_state:
-    st.session_state["opp_use_zero_defaults"] = False
+# 2) Namespace/nonce for widget keys (så vi kan “remounte” widgets uten rerun)
+if "opp_ns" not in st.session_state:
+    st.session_state["opp_ns"] = 0
 
-# Håndter reset tidlig (før UI)
-if st.session_state["opp_reset_mode"]:
-    # Fjern eksisterende widget-nøkler slik at de kan få nye startverdier
-    for _k in oppussing_defaults:
-        kk = f"opp_{_k}"
-        if kk in st.session_state:
-            del st.session_state[kk]
-    # Neste init-runde skal bruke nuller
-    st.session_state["opp_use_zero_defaults"] = True
-    st.session_state["opp_reset_mode"] = False
-    st.experimental_rerun()
+# 3) Reset-modus (skal reset gi 0-verdier i stedet for defaults?)
+if "opp_zero_mode" not in st.session_state:
+    st.session_state["opp_zero_mode"] = False
 
-# Init første-verdier (eller nuller etter reset)
-for _k, _default in oppussing_defaults.items():
-    kk = f"opp_{_k}"
-    if kk not in st.session_state:
-        st.session_state[kk] = 0 if st.session_state["opp_use_zero_defaults"] else _default
-
-# Slå av null-modus etter at den er brukt én gang
-if st.session_state["opp_use_zero_defaults"]:
-    st.session_state["opp_use_zero_defaults"] = False
-
-# ===========================
-# OPPUSSING – DEL 2 (UI I SIDEBAR DER DU ØNSKER)
-# ===========================
+# 4) UI
 oppussing_total = 0
 with st.sidebar.expander("🔨 Oppussing", expanded=True):
-    for key in oppussing_defaults:
-        widget_key = f"opp_{key}"
+    # Bygg en unik suffix så widget-keys blir nye når vi resetter
+    ns = st.session_state["opp_ns"]
+    for key, default in oppussing_defaults.items():
+        widget_key = f"opp_{key}_{ns}"  # << unik per “runde”
+        startverdi = 0 if st.session_state["opp_zero_mode"] else default
         val = st.number_input(
             label=key.capitalize(),
-            value=st.session_state[widget_key],
+            value=startverdi,
             key=widget_key,
             step=1000,
             format="%d",
@@ -69,10 +50,16 @@ with st.sidebar.expander("🔨 Oppussing", expanded=True):
 
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
-    # Kun sett trigger – selve resetten skjer helt øverst før UI
-    if st.button("Tilbakestill oppussing", key="btn_reset_oppussing"):
-        st.session_state["opp_reset_mode"] = True
+    if st.button("Tilbakestill oppussing", key=f"btn_reset_opp_{ns}"):
+        # Neste render: øk namespace (nye keys) og gå i zero-mode
+        st.session_state["opp_ns"] += 1
+        st.session_state["opp_zero_mode"] = True
 
+# 5) Etter første reset-render, gå tilbake til defaults for senere endringer
+# (dvs. nuller kun på selve reset-klikket)
+if st.session_state.get("opp_zero_mode", False):
+    # slå av etter at nye widgets er rendret én gang
+    st.session_state["opp_zero_mode"] = False
 # Driftskostnader
 drift_total = 0
 with st.sidebar.expander("💡 Driftskostnader", expanded=True):
