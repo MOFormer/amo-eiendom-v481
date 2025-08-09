@@ -175,7 +175,7 @@ total_investering = kjøpesum + kjøpskostnader + oppussing_total
 lånebeløp = max(total_investering - st.session_state["egenkapital"], 0)
 st.session_state["lån"] = lånebeløp  # tilgjengelig for beregning
 
-with st.sidebar.expander(f"🏦 Lån: {int(st.session_state['lån']):,} kr", expanded=True):
+with st.sidebar.expander(f"🏦 Lån: {int(st.session_state['lån']):,} kr", expanded=False):
     st.session_state["egenkapital"] = st.number_input(
         "Egenkapital", value=st.session_state["egenkapital"], min_value=0, step=10000
     )
