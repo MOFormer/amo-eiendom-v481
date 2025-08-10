@@ -222,7 +222,7 @@ for k, v in lån_defaults.items():
         st.session_state[k] = v
 
 # Total investering nå
-total_investering = kjøpesum + kjøpskostnader + oppussing_total
+total_investering = kjøpesum + Dokumentavgift + oppussing_total
 lånebeløp = max(total_investering - st.session_state["egenkapital"], 0)
 st.session_state["lån"] = lånebeløp  # tilgjengelig for beregning
 
