@@ -308,6 +308,7 @@ def lag_presentasjon_html(
     eierform: str,
     prosjekt_navn: str = "Eiendomsprosjekt",
     finn_url: str = "",
+    note: str = "",
 ) -> bytes:
 
     img_nett_b64, img_akk_b64, img_kake_b64 = _charts_base64(df, kjøpesum, dokumentavgift, oppussing_total)
@@ -342,7 +343,9 @@ def lag_presentasjon_html(
 
 <h1>{projektsafe(prosjekt_navn)}</h1>
 <p class="muted">Generert fra AMO Eiendomskalkulator</p>
+
 {finn_html}
+{f'<div class="card"><h2>Notater</h2><p>{projektsafe(note).replace("\\n", "<br>")}</p></div>' if note else ""}
 
 <div class="kpi">
   <div><div class="muted">Kjøpesum</div><div><strong>{kjøpesum:,.0f} kr</strong></div></div>
@@ -419,7 +422,7 @@ def build_rows(df: pd.DataFrame) -> str:
     return "".join(out)
 
 # --- Generer & last ned presentasjon ---
-rapport_bytes = lag_presentasjon_html(
+rapport_bytes = lag_presentasjon_html(note=note,
     df=df,
     kjøpesum=int(kjøpesum),
     dokumentavgift=int(kjøpskostnader),
