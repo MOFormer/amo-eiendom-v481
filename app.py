@@ -48,14 +48,43 @@ st.title("Eiendomskalkulator – med synlig scrollbar")
 # Sidebar: Eiendomsinfo
 # ===========================
 st.sidebar.header("🧾 Eiendomsinfo")
-kjøpesum_default = st.session_state["persist"].get("kjøpesum", 4_000_000)
-leie_default     = st.session_state["persist"].get("leie", 22_000)
 
+# Prosjektnavn & Finn-URL med persist
+proj_navn = st.sidebar.text_input(
+    "Prosjektnavn",
+    value=st.session_state["persist"].get("prosjekt_navn", "Eiendomsprosjekt"),
+    key="prosjekt_navn_input",
+    on_change=mark_dirty,
+)
+finn_url = st.sidebar.text_input(
+    "Finn-annonse (URL)",
+    value=st.session_state["persist"].get("finn_url", ""),
+    key="finn_url_input",
+    on_change=mark_dirty,
+    placeholder="https://www.finn.no/realestate/..."
+)
+# Normaliser enkeltskrivning uten http/https
+if finn_url and not finn_url.startswith(("http://", "https://")):
+    finn_url = "https://" + finn_url
+
+# speil til persist
+st.session_state["persist"]["prosjekt_navn"] = proj_navn
+st.session_state["persist"]["finn_url"] = finn_url
+
+# Kjøpesum / Leie med persist
 kjøpesum = st.sidebar.number_input(
-    "Kjøpesum", value=int(kjøpesum_default), step=100_000, key="kjøpesum_input", on_change=mark_dirty
+    "Kjøpesum",
+    value=int(st.session_state["persist"].get("kjøpesum", 4_000_000)),
+    step=100_000,
+    key="kjøpesum_input",
+    on_change=mark_dirty,
 )
 leie = st.sidebar.number_input(
-    "Leieinntekter / mnd", value=int(leie_default), step=1_000, key="leie_input", on_change=mark_dirty
+    "Leieinntekter / mnd",
+    value=int(st.session_state["persist"].get("leie", 22_000)),
+    step=1_000,
+    key="leie_input",
+    on_change=mark_dirty,
 )
 
 # speil til persist
