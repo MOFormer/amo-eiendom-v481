@@ -298,3 +298,187 @@ st.subheader("Grafer")
 st.line_chart(df[["Netto cashflow", "Akk. cashflow"]])
 st.line_chart(df[["Renter", "Avdrag"]])
 st.line_chart(df["Restgjeld"])
+
+import base64
+from io import BytesIO
+import matplotlib.pyplot as plt
+
+def _fig_to_base64_png(fig):
+    buf = BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight", dpi=150)
+    plt.close(fig)
+    buf.seek(0)
+    return base64.b64encode(buf.read()).decode("utf-8")
+
+def _lag_grafer_base64(df):
+    # 1) Netto cashflow, 24 mnd søyler (grønn/rød)
+    vis_mnd = min(24, len(df))
+    netto = df["Netto cashflow"].head(vis_mnd).tolist()
+    months = list(range(1, vis_mnd + 1))
+
+    fig1 = plt.figure()
+    colors = ["#2e7d32" if v >= 0 else "#c62828" for v in netto]
+    plt.bar(months, netto, edgecolor="none", linewidth=0, color=colors)
+    plt.axhline(0, linestyle="--")
+    plt.xlabel("Måned")
+    plt.ylabel("Netto cashflow")
+    plt.title("Netto cashflow (første 24 mnd)")
+    img1_b64 = _fig_to_base64_png(fig1)
+
+    # 2) Akkumulert cashflow linje
+    fig2 = plt.figure()
+    plt.plot(df["Måned"], df["Akk. cashflow"])
+    plt.axhline(0, linestyle="--")
+    plt.xlabel("Måned")
+    plt.ylabel("Akkumulert cashflow")
+    plt.title("Akkumulert cashflow")
+    img2_b64 = _fig_to_base64_png(fig2)
+
+    return img1_b64, img2_b64
+
+def lag_presentasjon_html(
+    df: pd.DataFrame,
+    kjøpesum: int,
+    kjøpskostnader: int,
+    oppussing_total: int,
+    drift_total: int,
+    total_investering: int,
+    leie: int,
+    lån: int,
+    rente: float,
+    løpetid: int,
+    avdragsfri: int,
+    lånetype: str,
+    eierform: str,
+    prosjekt_navn: str = "Eiendomsprosjekt",
+) -> bytes:
+    # Lag grafbilder
+    img_nett_b64, img_akk_b64 = _lag_grafer_base64(df)
+
+    # Nøkkeltall
+    brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0
+    netto_yield = ((leie * 12 - drift_total) / total_investering) * 100 if total_investering else 0
+
+    # Tabell (første 24 mnd for kompakthet)
+    vis_mnd = min(24, len(df))
+    tab_rows = []
+    for i in range(vis_mnd):
+        r = df.iloc[i]
+        tab_rows.append(
+            f"<tr>"
+            f"<td>{int(r['Måned'])}</td>"
+            f"<td>{r['Restgjeld']:,.0f}</td>"
+            f"<td>{r['Avdrag']:,.0f}</td>"
+            f"<td>{r['Renter']:,.0f}</td>"
+            f"<td>{r['Netto cashflow']:,.0f}</td>"
+            f"<td>{r['Akk. cashflow']:,.0f}</td>"
+            f"</tr>"
+        )
+
+    html = f"""
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8" />
+<title>{prosjekt_navn} – Presentasjon</title>
+<style>
+  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 24px; color: #111; }}
+  h1, h2 {{ margin: 0 0 8px 0; }}
+  h1 {{ font-size: 28px; }}
+  h2 {{ font-size: 20px; margin-top: 24px; }}
+  .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
+  .card {{ border: 1px solid #eee; border-radius: 12px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.04); }}
+  .kpi {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }}
+  .kpi div {{ background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 12px; }}
+  .muted {{ color: #555; font-size: 12px; }}
+  table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
+  th, td {{ border-bottom: 1px solid #eee; padding: 6px 8px; text-align: right; }}
+  th:first-child, td:first-child {{ text-align: left; }}
+  img {{ max-width: 100%; height: auto; border-radius: 10px; border: 1px solid #eee; }}
+  .badge {{ background: #eef6ff; color: #0b63ce; font-weight: 600; padding: 4px 8px; border-radius: 999px; display: inline-block; font-size: 12px; }}
+</style>
+</head>
+<body>
+
+<h1>{prosjekt_navn}</h1>
+<p class="muted">Generert automatisk fra AMO Eiendomskalkulator</p>
+
+<div class="kpi">
+  <div><div class="muted">Kjøpesum</div><div><strong>{kjøpesum:,.0f} kr</strong></div></div>
+  <div><div class="muted">Kjøpskostnader</div><div><strong>{kjøpskostnader:,.0f} kr</strong></div></div>
+  <div><div class="muted">Oppussing</div><div><strong>{oppussing_total:,.0f} kr</strong></div></div>
+  <div><div class="muted">Driftskostn./år</div><div><strong>{drift_total:,.0f} kr</strong></div></div>
+  <div><div class="muted">Total investering</div><div><strong>{total_investering:,.0f} kr</strong></div></div>
+  <div><div class="muted">Leie/mnd</div><div><strong>{leie:,.0f} kr</strong></div></div>
+  <div><div class="muted">Lån</div><div><strong>{lån:,.0f} kr</strong></div></div>
+  <div><div class="muted">Brutto yield</div><div><strong>{brutto_yield:.2f} %</strong></div></div>
+  <div><div class="muted">Netto yield</div><div><strong>{netto_yield:.2f} %</strong></div></div>
+</div>
+
+<h2>Finansiering</h2>
+<p class="muted">
+  Lånetype: <span class="badge">{lånetype}</span> &nbsp; | &nbsp; Rente: <strong>{rente:.2f}%</strong> &nbsp; | &nbsp; Løpetid: <strong>{løpetid} år</strong> &nbsp; | &nbsp; Avdragsfri: <strong>{avdragsfri} år</strong> &nbsp; | &nbsp; Eierform: <strong>{eierform}</strong>
+</p>
+
+<div class="grid">
+  <div class="card">
+    <h2>Netto cashflow (24 mnd)</h2>
+    <img src="data:image/png;base64,{img_nett_b64}" alt="Netto cashflow søylediagram" />
+  </div>
+  <div class="card">
+    <h2>Akkumulert cashflow</h2>
+    <img src="data:image/png;base64,{img_akk_b64}" alt="Akkumulert cashflow linjediagram" />
+  </div>
+</div>
+
+<h2>Kontantstrøm – første 24 måneder</h2>
+<div class="card">
+<table>
+  <thead>
+    <tr>
+      <th>Mnd</th>
+      <th>Restgjeld</th>
+      <th>Avdrag</th>
+      <th>Renter</th>
+      <th>Netto</th>
+      <th>Akk.</th>
+    </tr>
+  </thead>
+  <tbody>
+    {''.join(tab_rows)}
+  </tbody>
+</table>
+<p class="muted">Full tidsserie kan eksporteres fra appen (CSV/Excel).</p>
+</div>
+
+</body>
+</html>
+"""
+    return html.encode("utf-8")
+
+# === UI-knapp i Streamlit (legg etter at df og nøkkeltall er beregnet) ===
+rapport_bytes = lag_presentasjon_html(
+    df=df,
+    kjøpesum=kjøpesum,
+    kjøpskostnader=int(kjøpesum * 0.025),
+    oppussing_total=int(oppussing_total),
+    drift_total=int(drift_total),
+    total_investering=int(total_investering),
+    leie=int(leie),
+    lån=int(st.session_state["lån"]),
+    rente=float(st.session_state["rente"]),
+    løpetid=int(st.session_state["løpetid"]),
+    avdragsfri=int(st.session_state["avdragsfri"]),
+    lånetype=st.session_state["lånetype"],
+    eierform=st.session_state["eierform"],
+    prosjekt_navn="Eiendomsprosjekt",
+)
+
+st.download_button(
+    "📄 Last ned presentasjon (HTML)",
+    data=rapport_bytes,
+    file_name="eiendomsrapport.html",
+    mime="text/html",
+    use_container_width=True,
+)
+st.caption("Tips: Åpne HTML-filen i nettleser → Print → Save as PDF for å lagre som PDF.")
