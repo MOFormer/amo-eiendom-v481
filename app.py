@@ -18,9 +18,22 @@ st.title("Eiendomskalkulator – med synlig scrollbar")
 
 # ------------------ Sidebar: grunninntasting ------------------
 st.sidebar.header("🧾 Eiendomsinfo")
-kjøpesum = st.sidebar.number_input("Kjøpesum", value=4_000_000, step=100_000)
-leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
-Dokumentavgift = kjøpesum * 0.025  # 2.5 % kjøpsomkostninger
+
+# hent lagret verdi eller default
+kjøpesum_default = st.session_state["persist"].get("kjøpesum", 4_000_000)
+leie_default     = st.session_state["persist"].get("leie", 22_000)
+
+# widgets med on_change -> mark_dirty
+kjøpesum = st.sidebar.number_input(
+    "Kjøpesum", value=int(kjøpesum_default), step=100_000, key="kjøpesum_input", on_change=mark_dirty
+)
+leie = st.sidebar.number_input(
+    "Leieinntekter / mnd", value=int(leie_default), step=1_000, key="leie_input", on_change=mark_dirty
+)
+
+# speil til persist
+st.session_state["persist"]["kjøpesum"] = int(kjøpesum)
+st.session_state["persist"]["leie"] = int(leie)
 
 # ===========================
 # OPPUSSING (RERUN-FREE, ROBUST)
@@ -91,6 +104,34 @@ if st.session_state["opp_reset_request"]:
     st.session_state["opp_ns"] += 1   # nye keys → 0-verdier
     st.session_state["opp_reset_request"] = False
 
+import json, os
+from pathlib import Path
+
+PERSIST_PATH = Path("autosave.json")
+
+def _load_persist() -> dict:
+    if PERSIST_PATH.exists():
+        try:
+            return json.loads(PERSIST_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+def _save_persist(data: dict):
+    try:
+        PERSIST_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+# global state for lagring
+if "persist" not in st.session_state:
+    st.session_state["persist"] = _load_persist()  # { "kjøpesum":..., "leie":..., "opp":{...}, "drift":{...}, ...}
+if "_dirty" not in st.session_state:
+    st.session_state["_dirty"] = False
+
+def mark_dirty():
+    st.session_state["_dirty"] = True
+
 # ---- Driftskostnader pre-reset ----
 if "drift_ns" not in st.session_state:
     st.session_state["drift_ns"] = 0
@@ -109,7 +150,8 @@ if "opp_ns" not in st.session_state:
     st.session_state["opp_ns"] = 0
 
 # Sum for tittelvisning inni boksen (ikke i label)
-opp_title_total = sum_namespace("opp", oppussing_defaults, st.session_state["opp_ns"])
+# sørg for dict finnes
+st.session_state["persist"].setdefault("opp", {})
 
 with st.sidebar.expander("🔨 Oppussing", expanded=st.session_state["opp_expanded"]):
     st.caption(f"**Sum oppussing:** {opp_title_total:,} kr")
@@ -118,24 +160,29 @@ with st.sidebar.expander("🔨 Oppussing", expanded=st.session_state["opp_expand
         "Tilbakestill oppussing",
         key="btn_reset_opp",
         on_click=reset_and_expand,
-        args=("opp", "opp_reset_request"),   # sett reset-flagget og hold åpen
+        args=("opp", "opp_reset_request"),
     )
 
     ns = st.session_state["opp_ns"]
     oppussing_total = 0
     for key, default in oppussing_defaults.items():
-        wkey = f"opp_{key}_{ns}"
-        startverdi = st.session_state.get(wkey, default if ns == 0 else 0)
+        logic_key = key  # “logisk” nøkkel for lagring
+        saved_val  = st.session_state["persist"]["opp"].get(logic_key, default if ns == 0 else 0)
+        wkey       = f"opp_{key}_{ns}"
         val = st.number_input(
             key.capitalize(),
-            value=startverdi,
+            value=int(st.session_state.get(wkey, saved_val)),
             key=wkey,
             step=1000,
             format="%d",
-            on_change=expand_section,        # <- hold åpen når Enter trykkes
+            on_change=expand_section,
             args=("opp",),
         )
-        oppussing_total += val
+        # oppdater både totalsum og lagring
+        oppussing_total += int(val)
+        if st.session_state["persist"]["opp"].get(logic_key) != int(val):
+            st.session_state["persist"]["opp"][logic_key] = int(val)
+            mark_dirty()
 
     st.markdown(f"**Totalt: {int(oppussing_total):,} kr**")
 
@@ -162,6 +209,8 @@ if "drift_ns" not in st.session_state:
 # Reset-knapp FØR expanderen
 drift_title_total = sum_namespace("drift", driftskostnader_defaults, st.session_state["drift_ns"])
 
+st.session_state["persist"].setdefault("drift", {})
+
 with st.sidebar.expander("💡 Driftskostnader", expanded=st.session_state["drift_expanded"]):
     st.caption(f"**Sum driftskostnader:** {drift_title_total:,} kr")
 
@@ -175,18 +224,22 @@ with st.sidebar.expander("💡 Driftskostnader", expanded=st.session_state["drif
     ns = st.session_state["drift_ns"]
     drift_total = 0
     for key, default in driftskostnader_defaults.items():
-        wkey = f"drift_{key}_{ns}"
-        startverdi = st.session_state.get(wkey, default if ns == 0 else 0)
+        logic_key = key
+        saved_val = st.session_state["persist"]["drift"].get(logic_key, default if ns == 0 else 0)
+        wkey      = f"drift_{key}_{ns}"
         val = st.number_input(
             key.capitalize(),
-            value=startverdi,
+            value=int(st.session_state.get(wkey, saved_val)),
             key=wkey,
             step=1000,
             format="%d",
-            on_change=expand_section,      # <- hold åpen når Enter trykkes
+            on_change=expand_section,
             args=("drift",),
         )
-        drift_total += val
+        drift_total += int(val)
+        if st.session_state["persist"]["drift"].get(logic_key) != int(val):
+            st.session_state["persist"]["drift"][logic_key] = int(val)
+            mark_dirty()
 
     st.markdown(f"**Totalt: {int(drift_total):,} kr**")
 
@@ -224,6 +277,11 @@ with st.sidebar.expander(f"🏦 Lån: {int(st.session_state['lån']):,} kr", exp
                                   index=["Annuitetslån", "Serielån"].index(st.session_state["lånetype"]))
     st.session_state["eierform"]  = st.radio("Eierform", ["Privat", "AS"],
                                   index=["Privat", "AS"].index(st.session_state["eierform"]))
+
+# etter låne-widgets
+for k in ("egenkapital","rente","løpetid","avdragsfri","lånetype","eierform"):
+    st.session_state["persist"][k] = st.session_state[k]
+mark_dirty()
 
 # ------------------ Lånekalkyle ------------------
 def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierform):
@@ -482,3 +540,7 @@ st.download_button(
     use_container_width=True,
 )
 st.caption("Tips: Åpne HTML-filen i nettleser → Print → Save as PDF for å lagre som PDF.")
+
+if st.session_state.get("_dirty"):
+    _save_persist(st.session_state["persist"])
+    st.session_state["_dirty"] = False
