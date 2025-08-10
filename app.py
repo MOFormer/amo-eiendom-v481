@@ -327,16 +327,55 @@ def lag_presentasjon_html(
     eierform: str,
     prosjekt_navn: str = "Eiendomsprosjekt",
     finn_url: str = "",
-    # valgfritt: send inn detaljer for tabeller. Hvis None leses de fra session_state.
-    opp_vals: dict | None = None,
-    drift_vals: dict | None = None,
-    opp_defaults: dict | None = None,
-    drift_defaults: dict | None = None,
-    opp_ns: int | None = None,
-    drift_ns: int | None = None,
 ) -> bytes:
 
-# --- Generer & last ned presentasjon (legg dette ETTER df/verdier er beregnet) ---
+    img_nett_b64, img_akk_b64, img_kake_b64 = _charts_base64(df, kjøpesum, dokumentavgift, oppussing_total)
+    brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0
+    netto_yield  = ((leie * 12 - drift_total) / total_investering) * 100 if total_investering else 0
+
+    finn_html = f'<p><a href="{finn_url}" target="_blank">🔗 Åpne Finn-annonse</a></p>' if finn_url else ""
+
+    html = f"""
+    <html>
+    <body>
+    <h1>{prosjekt_navn}</h1>
+    {finn_html}
+    <p>Kjøpesum: {kjøpesum:,.0f} kr</p>
+    <p>Dokumentavgift: {dokumentavgift:,.0f} kr</p>
+    <p>Oppussing: {oppussing_total:,.0f} kr</p>
+    <p>Drift: {drift_total:,.0f} kr</p>
+    <p>Total investering: {total_investering:,.0f} kr</p>
+    <p>Brutto yield: {brutto_yield:.2f}%</p>
+    <p>Netto yield: {netto_yield:.2f}%</p>
+    <h2>Grafer</h2>
+    <img src="data:image/png;base64,{img_nett_b64}"/>
+    <img src="data:image/png;base64,{img_akk_b64}"/>
+    <img src="data:image/png;base64,{img_kake_b64}"/>
+    </body>
+    </html>
+    """
+    return html.encode("utf-8")
+
+
+# --- Generer & last ned presentasjon ---
+rapport_bytes = lag_presentasjon_html(
+    df,
+    kjøpesum,
+    int(kjøpskostnader),
+    oppussing_total,
+    drift_total,
+    total_investering,
+    leie,
+    st.session_state["lån"],
+    st.session_state["rente"],
+    st.session_state["løpetid"],
+    st.session_state["avdragsfri"],
+    st.session_state["lånetype"],
+    st.session_state["eierform"],
+    proj_navn,
+    finn_url
+)
+
 st.markdown("---")
 st.subheader("📄 Presentasjon")
 st.download_button(
@@ -347,7 +386,6 @@ st.download_button(
     use_container_width=True,
 )
 st.caption("Tips: Åpne HTML → Print → Lagre som PDF.")
-
     # Les seksjonsverdier hvis ikke gitt
     if opp_vals is None and opp_defaults is not None and opp_ns is not None:
         opp_vals = _read_section("opp", opp_defaults, opp_ns)
