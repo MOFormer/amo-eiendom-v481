@@ -336,8 +336,7 @@ def lag_presentasjon_html(
     drift_ns: int | None = None,
 ) -> bytes:
 
-# --- Generer & last ned presentasjon (legg dette ETTER df/verdier er beregnet) ---
-rapport_bytes = lag_presentasjon_html()
+
 
 # Flytt til sidebaren for enkel tilgang
 st.sidebar.markdown("---")
