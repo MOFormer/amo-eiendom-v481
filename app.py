@@ -369,7 +369,28 @@ def lag_presentasjon_html(
     prosjekt_navn: str = "Eiendomsprosjekt",
     finn_url: str = "",
 ) -> bytes:
-    # ... (ingen endring i graf-koden)
+    # Lag grafbilder (base64)
+    img_nett_b64, img_akk_b64 = _lag_grafer_base64(df)
+
+    # Nøkkeltall
+    brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0.0
+    netto_yield  = ((leie * 12 - drift_total) / total_investering) * 100 if total_investering else 0.0
+
+    # Tabell (første 24 mnd for kompakthet)
+    vis_mnd = min(24, len(df))
+    tab_rows = []
+    for i in range(vis_mnd):
+        r = df.iloc[i]
+        tab_rows.append(
+            f"<tr>"
+            f"<td>{int(r['Måned'])}</td>"
+            f"<td>{r['Restgjeld']:,.0f}</td>"
+            f"<td>{r['Avdrag']:,.0f}</td>"
+            f"<td>{r['Renter']:,.0f}</td>"
+            f"<td>{r['Netto cashflow']:,.0f}</td>"
+            f"<td>{r['Akk. cashflow']:,.0f}</td>"
+            f"</tr>"
+        )
 
     finn_html = (
         f'<p><a href="{finn_url}" target="_blank" '
@@ -378,8 +399,7 @@ def lag_presentasjon_html(
         if finn_url else ""
     )
 
-    html = f"""
-<!DOCTYPE html>
+    html = f"""<!DOCTYPE html>
 <html lang="no">
 <head>
 <meta charset="utf-8" />
@@ -391,7 +411,7 @@ def lag_presentasjon_html(
   h2 {{ font-size: 20px; margin-top: 24px; }}
   .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
   .card {{ border: 1px solid #eee; border-radius: 12px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.04); }}
-  .kpi {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }}
+  .kpi {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px; }}
   .kpi div {{ background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 12px; }}
   .muted {{ color: #555; font-size: 12px; }}
   table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
@@ -407,8 +427,58 @@ def lag_presentasjon_html(
 <p class="muted">Generert automatisk fra AMO Eiendomskalkulator</p>
 {finn_html}
 
-<!-- resten av HTML-en er uendret -->
-...
+<div class="kpi">
+  <div><div class="muted">Kjøpesum</div><div><strong>{kjøpesum:,.0f} kr</strong></div></div>
+  <div><div class="muted">Kjøpskostnader</div><div><strong>{kjøpskostnader:,.0f} kr</strong></div></div>
+  <div><div class="muted">Oppussing</div><div><strong>{oppussing_total:,.0f} kr</strong></div></div>
+  <div><div class="muted">Driftskostn./år</div><div><strong>{drift_total:,.0f} kr</strong></div></div>
+  <div><div class="muted">Total investering</div><div><strong>{total_investering:,.0f} kr</strong></div></div>
+  <div><div class="muted">Leie/mnd</div><div><strong>{leie:,.0f} kr</strong></div></div>
+  <div><div class="muted">Lån</div><div><strong>{lån:,.0f} kr</strong></div></div>
+  <div><div class="muted">Brutto yield</div><div><strong>{brutto_yield:.2f} %</strong></div></div>
+  <div><div class="muted">Netto yield</div><div><strong>{netto_yield:.2f} %</strong></div></div>
+</div>
+
+<h2>Finansiering</h2>
+<p class="muted">
+  Lånetype: <span class="badge">{lånetype}</span> &nbsp; | &nbsp; 
+  Rente: <strong>{rente:.2f}%</strong> &nbsp; | &nbsp; 
+  Løpetid: <strong>{løpetid} år</strong> &nbsp; | &nbsp; 
+  Avdragsfri: <strong>{avdragsfri} år</strong> &nbsp; | &nbsp; 
+  Eierform: <strong>{eierform}</strong>
+</p>
+
+<div class="grid">
+  <div class="card">
+    <h2>Netto cashflow (24 mnd)</h2>
+    <img src="data:image/png;base64,{img_nett_b64}" alt="Netto cashflow søylediagram" />
+  </div>
+  <div class="card">
+    <h2>Akkumulert cashflow</h2>
+    <img src="data:image/png;base64,{img_akk_b64}" alt="Akkumulert cashflow linjediagram" />
+  </div>
+</div>
+
+<h2>Kontantstrøm – første 24 måneder</h2>
+<div class="card">
+<table>
+  <thead>
+    <tr>
+      <th>Mnd</th>
+      <th>Restgjeld</th>
+      <th>Avdrag</th>
+      <th>Renter</th>
+      <th>Netto</th>
+      <th>Akk.</th>
+    </tr>
+  </thead>
+  <tbody>
+    {''.join(tab_rows)}
+  </tbody>
+</table>
+<p class="muted">Full tidsserie kan eksporteres fra appen (CSV/Excel).</p>
+</div>
+
 </body>
 </html>
 """
