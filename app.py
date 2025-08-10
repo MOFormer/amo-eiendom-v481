@@ -36,7 +36,7 @@ if finn_url and not finn_url.startswith(("http://", "https://")):
 st.session_state["finn_url"] = finn_url
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=4_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
-kjøpskostnader = kjøpesum * 0.025  # 2.5 % kjøpsomkostninger
+Dokumentavgift = kjøpesum * 0.025  # 2.5 % kjøpsomkostninger
 
 # ===========================
 # OPPUSSING (RERUN-FREE, ROBUST)
