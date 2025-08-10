@@ -14,29 +14,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("AMO Eiendomskalkulator")
+st.title("Eiendomskalkulator – med synlig scrollbar")
 
 # ------------------ Sidebar: grunninntasting ------------------
 st.sidebar.header("🧾 Eiendomsinfo")
-# --- Prosjektnavn + Finn-annonse ---
-proj_navn = st.sidebar.text_input(
-    "Prosjektnavn",
-    value=st.session_state.get("prosjekt_navn", "Eiendomsprosjekt"),
-)
-st.session_state["prosjekt_navn"] = proj_navn
-
-finn_url = st.sidebar.text_input(
-    "Finn-annonse (URL)",
-    value=st.session_state.get("finn_url", ""),
-    placeholder="https://www.finn.no/realestate/..."
-)
-# enkel normalisering
-if finn_url and not finn_url.startswith(("http://", "https://")):
-    finn_url = "https://" + finn_url
-st.session_state["finn_url"] = finn_url
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=4_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
-Dokumentavgift = kjøpesum * 0.025  # 2.5 % kjøpsomkostninger
+kjøpskostnader = kjøpesum * 0.025  # 2.5 % kjøpsomkostninger
 
 # ===========================
 # OPPUSSING (RERUN-FREE, ROBUST)
@@ -222,7 +206,7 @@ for k, v in lån_defaults.items():
         st.session_state[k] = v
 
 # Total investering nå
-total_investering = kjøpesum + Dokumentavgift + oppussing_total
+total_investering = kjøpesum + kjøpskostnader + oppussing_total
 lånebeløp = max(total_investering - st.session_state["egenkapital"], 0)
 st.session_state["lån"] = lånebeløp  # tilgjengelig for beregning
 
@@ -355,7 +339,7 @@ def _lag_grafer_base64(df):
 def lag_presentasjon_html(
     df: pd.DataFrame,
     kjøpesum: int,
-    Dokumentavgift: int,
+    kjøpskostnader: int,
     oppussing_total: int,
     drift_total: int,
     total_investering: int,
@@ -367,14 +351,13 @@ def lag_presentasjon_html(
     lånetype: str,
     eierform: str,
     prosjekt_navn: str = "Eiendomsprosjekt",
-    finn_url: str = "",
 ) -> bytes:
-    # Lag grafbilder (base64)
+    # Lag grafbilder
     img_nett_b64, img_akk_b64 = _lag_grafer_base64(df)
 
     # Nøkkeltall
-    brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0.0
-    netto_yield  = ((leie * 12 - drift_total) / total_investering) * 100 if total_investering else 0.0
+    brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0
+    netto_yield = ((leie * 12 - drift_total) / total_investering) * 100 if total_investering else 0
 
     # Tabell (første 24 mnd for kompakthet)
     vis_mnd = min(24, len(df))
@@ -392,14 +375,8 @@ def lag_presentasjon_html(
             f"</tr>"
         )
 
-    finn_html = (
-        f'<p><a href="{finn_url}" target="_blank" '
-        f'style="text-decoration:none;padding:8px 12px;border:1px solid #0b63ce;'
-        f'border-radius:8px;color:#0b63ce;">🔗 Åpne Finn-annonse</a></p>'
-        if finn_url else ""
-    )
-
-    html = f"""<!DOCTYPE html>
+    html = f"""
+<!DOCTYPE html>
 <html lang="no">
 <head>
 <meta charset="utf-8" />
@@ -411,7 +388,7 @@ def lag_presentasjon_html(
   h2 {{ font-size: 20px; margin-top: 24px; }}
   .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
   .card {{ border: 1px solid #eee; border-radius: 12px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.04); }}
-  .kpi {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px; }}
+  .kpi {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }}
   .kpi div {{ background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 12px; }}
   .muted {{ color: #555; font-size: 12px; }}
   table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
@@ -425,7 +402,6 @@ def lag_presentasjon_html(
 
 <h1>{prosjekt_navn}</h1>
 <p class="muted">Generert automatisk fra AMO Eiendomskalkulator</p>
-{finn_html}
 
 <div class="kpi">
   <div><div class="muted">Kjøpesum</div><div><strong>{kjøpesum:,.0f} kr</strong></div></div>
@@ -441,11 +417,7 @@ def lag_presentasjon_html(
 
 <h2>Finansiering</h2>
 <p class="muted">
-  Lånetype: <span class="badge">{lånetype}</span> &nbsp; | &nbsp; 
-  Rente: <strong>{rente:.2f}%</strong> &nbsp; | &nbsp; 
-  Løpetid: <strong>{løpetid} år</strong> &nbsp; | &nbsp; 
-  Avdragsfri: <strong>{avdragsfri} år</strong> &nbsp; | &nbsp; 
-  Eierform: <strong>{eierform}</strong>
+  Lånetype: <span class="badge">{lånetype}</span> &nbsp; | &nbsp; Rente: <strong>{rente:.2f}%</strong> &nbsp; | &nbsp; Løpetid: <strong>{løpetid} år</strong> &nbsp; | &nbsp; Avdragsfri: <strong>{avdragsfri} år</strong> &nbsp; | &nbsp; Eierform: <strong>{eierform}</strong>
 </p>
 
 <div class="grid">
@@ -488,7 +460,7 @@ def lag_presentasjon_html(
 rapport_bytes = lag_presentasjon_html(
     df=df,
     kjøpesum=kjøpesum,
-    Dokumentavgift=int(kjøpesum * 0.025),
+    kjøpskostnader=int(kjøpesum * 0.025),
     oppussing_total=int(oppussing_total),
     drift_total=int(drift_total),
     total_investering=int(total_investering),
@@ -499,8 +471,7 @@ rapport_bytes = lag_presentasjon_html(
     avdragsfri=int(st.session_state["avdragsfri"]),
     lånetype=st.session_state["lånetype"],
     eierform=st.session_state["eierform"],
-    prosjekt_navn=st.session_state.get("prosjekt_navn", "Eiendomsprosjekt"),
-    finn_url=st.session_state.get("finn_url", ""),
+    prosjekt_navn="Eiendomsprosjekt",
 )
 
 st.download_button(
