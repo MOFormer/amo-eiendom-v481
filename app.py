@@ -262,32 +262,91 @@ def _lag_grafer_base64(df):
     img2_b64 = _fig_to_base64_png(fig2)
     return img1_b64, img2_b64
 
-# ---------- HTML-rapport ----------
-def lag_presentasjon_html():
-    img_nett_b64, img_akk_b64 = _lag_grafer_base64(df)
-    finn_html = f'<p><a href="{finn_url}" target="_blank">🔗 Åpne Finn-annonse</a></p>' if finn_url else ""
-    brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0
-    netto_yield = ((leie * 12 - drift_total) / total_investering) * 100 if total_investering else 0
-    return f"""
-    <html>
-    <body>
-    <h1>{proj_navn}</h1>
-    {finn_html}
-    <p>Kjøpesum: {kjøpesum:,.0f} kr</p>
-    <p>Dokumentavgift: {kjøpskostnader:,.0f} kr</p>
-    <p>Oppussing: {oppussing_total:,.0f} kr</p>
-    <p>Drift: {drift_total:,.0f} kr</p>
-    <p>Total investering: {total_investering:,.0f} kr</p>
-    <p>Brutto yield: {brutto_yield:.2f}%</p>
-    <p>Netto yield: {netto_yield:.2f}%</p>
-    <img src="data:image/png;base64,{img_nett_b64}"/>
-    <img src="data:image/png;base64,{img_akk_b64}"/>
-    </body>
-    </html>
-    """.encode("utf-8")
+import base64
+from io import BytesIO
+import matplotlib.pyplot as plt
 
-rapport_bytes = lag_presentasjon_html()
-st.download_button("📄 Last ned presentasjon (HTML)", data=rapport_bytes, file_name="rapport.html", mime="text/html")
+def _fig_to_base64_png(fig):
+    buf = BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight", dpi=150)
+    plt.close(fig)
+    buf.seek(0)
+    return base64.b64encode(buf.read()).decode("utf-8")
+
+def _read_section(prefix: str, defaults: dict, ns: int) -> dict:
+    """Les aktive verdier fra session_state for en seksjon."""
+    out = {}
+    for k, d in defaults.items():
+        out[k] = int(st.session_state.get(f"{prefix}_{k}_{ns}", d if ns == 0 else 0))
+    return out
+
+def _charts_base64(df, kjøpesum, dokumentavgift, oppussing_total):
+    # Netto cashflow – første 24 mnd, fargekodet
+    vis_mnd = min(24, len(df))
+    months = list(range(1, vis_mnd + 1))
+    netto = df["Netto cashflow"].head(vis_mnd).tolist()
+
+    fig1 = plt.figure()
+    colors = ["#2e7d32" if v >= 0 else "#c62828" for v in netto]
+    plt.bar(months, netto, color=colors, linewidth=0)
+    plt.axhline(0, linestyle="--", linewidth=1)
+    plt.xlabel("Måned"); plt.ylabel("Netto cashflow"); plt.title("Netto cashflow (første 24 mnd)")
+    img_nett_b64 = _fig_to_base64_png(fig1)
+
+    # Akkumulert cashflow – hele perioden
+    fig2 = plt.figure()
+    plt.plot(df["Måned"], df["Akk. cashflow"])
+    plt.axhline(0, linestyle="--", linewidth=1)
+    plt.xlabel("Måned"); plt.ylabel("Akkumulert cashflow"); plt.title("Akkumulert cashflow")
+    img_akk_b64 = _fig_to_base64_png(fig2)
+
+    # Kostnadsfordeling (kake): Kjøpesum vs. dokumentavgift vs. oppussing
+    labels = ["Kjøpesum", "Dokumentavgift", "Oppussing"]
+    sizes = [kjøpesum, dokumentavgift, oppussing_total]
+    fig3 = plt.figure()
+    plt.pie(sizes, labels=labels, autopct="%1.0f%%", startangle=90)
+    plt.title("Investering – fordeling")
+    img_kake_b64 = _fig_to_base64_png(fig3)
+
+    return img_nett_b64, img_akk_b64, img_kake_b64
+
+# ---------- HTML-rapport ----------
+def lag_presentasjon_html(
+    df: pd.DataFrame,
+    kjøpesum: int,
+    dokumentavgift: int,
+    oppussing_total: int,
+    drift_total: int,
+    total_investering: int,
+    leie: int,
+    lån: int,
+    rente: float,
+    løpetid: int,
+    avdragsfri: int,
+    lånetype: str,
+    eierform: str,
+    prosjekt_navn: str = "Eiendomsprosjekt",
+    finn_url: str = "",
+    # valgfritt: send inn detaljer for tabeller. Hvis None leses de fra session_state.
+    opp_vals: dict | None = None,
+    drift_vals: dict | None = None,
+    opp_defaults: dict | None = None,
+    drift_defaults: dict | None = None,
+    opp_ns: int | None = None,
+    drift_ns: int | None = None,
+) -> bytes:
+    # Les seksjonsverdier hvis ikke gitt
+    if opp_vals is None and opp_defaults is not None and opp_ns is not None:
+        opp_vals = _read_section("opp", opp_defaults, opp_ns)
+    if drift_vals is None and drift_defaults is not None and drift_ns is not None:
+        drift_vals = _read_section("drift", drift_defaults, drift_ns)
+
+    # Grafer
+    img_nett_b64, img_akk_b64, img_kake_b64 = _charts_base64(df, kjøpesum, dokumentavgift, oppussing_total)
+
+    # KPI’er
+    brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0
+    netto_yield  = ((leie * 12 - drift_total) / total_investering) * 100 if total_investering else 0
 
 # ---------- Lagre persist til fil ----------
 if st.session_state["_dirty"]:
