@@ -214,6 +214,25 @@ df, akk = beregn_lån(
     st.session_state["eierform"]
 )
 
+# === HOVEDINNHOLD (resultater til høyre) ===
+st.markdown("---")
+col1, col2 = st.columns([1, 1.4])
+
+with col1:
+    st.subheader("✨ Resultater")
+    st.metric("Total investering", f"{int(total_investering):,} kr")
+    st.metric("Brutto yield", f"{(leie * 12 / total_investering) * 100:.2f} %")
+    st.metric("Netto yield", f"{((leie * 12 - drift_total) / total_investering) * 100:.2f} %")
+
+    st.subheader("Kontantstrøm (første 60 måneder)")
+    st.dataframe(df.head(60), use_container_width=True, height=500)
+
+with col2:
+    st.subheader("Grafer")
+    st.line_chart(df[["Netto cashflow", "Akk. cashflow"]], use_container_width=True)
+    st.line_chart(df[["Renter", "Avdrag"]], use_container_width=True)
+    st.line_chart(df["Restgjeld"], use_container_width=True)
+
 # ---------- Grafer til rapport ----------
 def _fig_to_base64_png(fig):
     buf = BytesIO()
