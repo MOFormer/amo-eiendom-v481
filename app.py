@@ -50,6 +50,15 @@ finn_url = st.sidebar.text_input(
     on_change=mark_dirty,
     placeholder="https://www.finn.no/realestate/..."
 )
+
+note = st.sidebar.text_area(
+    "Prosjektnotater",
+    value=st.session_state["persist"].get("note", ""),
+    on_change=mark_dirty,
+    height=100,
+    placeholder="Skriv inn dine notater om prosjektet..."
+)
+st.session_state["persist"]["note"] = note
 # enkel normalisering for rask lim/skriv
 if finn_url and not finn_url.startswith(("http://", "https://")):
     finn_url = "https://" + finn_url
