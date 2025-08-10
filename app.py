@@ -23,6 +23,7 @@ def _save_persist(data: dict):
     except Exception:
         pass
 
+# init session_state for persist + dirty
 if "persist" not in st.session_state:
     st.session_state["persist"] = _load_persist()
 if "_dirty" not in st.session_state:
@@ -49,6 +50,7 @@ finn_url = st.sidebar.text_input(
     on_change=mark_dirty,
     placeholder="https://www.finn.no/realestate/..."
 )
+# enkel normalisering for rask lim/skriv
 if finn_url and not finn_url.startswith(("http://", "https://")):
     finn_url = "https://" + finn_url
 
@@ -70,7 +72,7 @@ leie = st.sidebar.number_input(
 
 st.session_state["persist"]["kjøpesum"] = int(kjøpesum)
 st.session_state["persist"]["leie"] = int(leie)
-kjøpskostnader = kjøpesum * 0.025  # Dokumentavgift
+kjøpskostnader = int(kjøpesum * 0.025)  # Dokumentavgift
 
 # ---------- Oppussing ----------
 oppussing_defaults = {
@@ -83,16 +85,13 @@ oppussing_defaults = {
     "elektriker": 30000,
     "utvendig": 20000,
 }
-
-if "opp_ns" not in st.session_state:
-    st.session_state["opp_ns"] = 0
 st.session_state["persist"].setdefault("opp", {})
 
 oppussing_total = 0
 with st.sidebar.expander("🔨 Oppussing", expanded=False):
     for key, default in oppussing_defaults.items():
         saved_val = st.session_state["persist"]["opp"].get(key, default)
-        wkey = f"opp_{key}_{st.session_state['opp_ns']}"
+        wkey = f"opp_{key}"
         val = st.number_input(
             key.capitalize(),
             value=int(st.session_state.get(wkey, saved_val)),
@@ -100,8 +99,12 @@ with st.sidebar.expander("🔨 Oppussing", expanded=False):
             step=1000,
             format="%d"
         )
-        oppussing_total += int(val)
-        st.session_state["persist"]["opp"][key] = int(val)
+        val = int(val)
+        oppussing_total += val
+        # speil til persist + mark dirty hvis endret
+        if st.session_state["persist"]["opp"].get(key) != val:
+            st.session_state["persist"]["opp"][key] = val
+            mark_dirty()
     st.markdown(f"**Totalt: {oppussing_total:,} kr**")
 
 # ---------- Driftskostnader ----------
@@ -112,16 +115,13 @@ driftskostnader_defaults = {
     "internett": 3000,
     "vedlikehold": 8000,
 }
-
-if "drift_ns" not in st.session_state:
-    st.session_state["drift_ns"] = 0
 st.session_state["persist"].setdefault("drift", {})
 
 drift_total = 0
 with st.sidebar.expander("💡 Driftskostnader", expanded=False):
     for key, default in driftskostnader_defaults.items():
         saved_val = st.session_state["persist"]["drift"].get(key, default)
-        wkey = f"drift_{key}_{st.session_state['drift_ns']}"
+        wkey = f"drift_{key}"
         val = st.number_input(
             key.capitalize(),
             value=int(st.session_state.get(wkey, saved_val)),
@@ -129,8 +129,11 @@ with st.sidebar.expander("💡 Driftskostnader", expanded=False):
             step=1000,
             format="%d"
         )
-        drift_total += int(val)
-        st.session_state["persist"]["drift"][key] = int(val)
+        val = int(val)
+        drift_total += val
+        if st.session_state["persist"]["drift"].get(key) != val:
+            st.session_state["persist"]["drift"][key] = val
+            mark_dirty()
     st.markdown(f"**Totalt: {drift_total:,} kr**")
 
 # ---------- Lån ----------
@@ -142,35 +145,43 @@ lån_defaults = {
     "lånetype": "Annuitetslån",
     "eierform": "Privat",
 }
+# init lån-felter fra persist hvis finnes
 for k, v in lån_defaults.items():
     if k not in st.session_state:
         st.session_state[k] = st.session_state["persist"].get(k, v)
 
-total_investering = kjøpesum + kjøpskostnader + oppussing_total
-lånebeløp = max(total_investering - st.session_state["egenkapital"], 0)
+total_investering = int(kjøpesum + kjøpskostnader + oppussing_total)
+lånebeløp = max(total_investering - int(st.session_state["egenkapital"]), 0)
 st.session_state["lån"] = lånebeløp
 
 with st.sidebar.expander(f"🏦 Lån: {int(st.session_state['lån']):,} kr", expanded=False):
-    st.session_state["egenkapital"] = st.number_input("Egenkapital", value=st.session_state["egenkapital"], step=10000)
-    st.session_state["rente"] = st.number_input("Rente (%)", value=st.session_state["rente"], step=0.1)
-    st.session_state["løpetid"] = st.number_input("Løpetid (år)", value=st.session_state["løpetid"], step=1, min_value=1)
-    st.session_state["avdragsfri"] = st.number_input("Avdragsfri (år)", value=st.session_state["avdragsfri"], step=1, min_value=0)
+    st.session_state["egenkapital"] = st.number_input("Egenkapital", value=int(st.session_state["egenkapital"]), step=10000)
+    st.session_state["rente"] = st.number_input("Rente (%)", value=float(st.session_state["rente"]), step=0.1)
+    st.session_state["løpetid"] = st.number_input("Løpetid (år)", value=int(st.session_state["løpetid"]), step=1, min_value=1)
+    st.session_state["avdragsfri"] = st.number_input("Avdragsfri (år)", value=int(st.session_state["avdragsfri"]), step=1, min_value=0)
     st.session_state["lånetype"] = st.selectbox("Lånetype", ["Annuitetslån", "Serielån"], index=["Annuitetslån", "Serielån"].index(st.session_state["lånetype"]))
     st.session_state["eierform"] = st.radio("Eierform", ["Privat", "AS"], index=["Privat", "AS"].index(st.session_state["eierform"]))
 
+# oppdater persist for lån
 for k in lån_defaults:
-    st.session_state["persist"][k] = st.session_state[k]
+    if st.session_state["persist"].get(k) != st.session_state[k]:
+        st.session_state["persist"][k] = st.session_state[k]
+        mark_dirty()
+
+# oppdater lånebeløp etter ev. endringer
+total_investering = int(kjøpesum + kjøpskostnader + oppussing_total)
+st.session_state["lån"] = max(total_investering - int(st.session_state["egenkapital"]), 0)
 
 # ---------- Beregning ----------
 def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierform):
     n  = int(løpetid * 12)
     af = int(avdragsfri * 12)
-    r  = rente / 100 / 12
+    r  = float(rente) / 100 / 12
     if lånetype == "Annuitetslån" and r > 0 and (n - af) > 0:
         terminbeløp = lån * (r * (1 + r)**(n - af)) / ((1 + r)**(n - af) - 1)
     else:
         terminbeløp = lån / (n - af) if (n - af) > 0 else 0
-    saldo = lån
+    saldo = float(lån)
     restgjeld, avdrag, renter_liste, netto_cf, akk_cf = [], [], [], [], []
     akk = 0.0
     for m in range(n):
@@ -179,13 +190,13 @@ def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierf
             avdrag_mnd = 0.0
             termin = rente_mnd
         elif lånetype == "Serielån" and (n - af) > 0:
-            avdrag_mnd = lån / (n - af)
+            avdrag_mnd = float(lån) / (n - af)
             termin = avdrag_mnd + rente_mnd
         else:
             avdrag_mnd = terminbeløp - rente_mnd
             termin = terminbeløp
         saldo = max(saldo - avdrag_mnd, 0.0)
-        netto = leie - (drift / 12.0) - termin
+        netto = float(leie) - (float(drift) / 12.0) - termin
         if eierform == "AS" and netto > 0:
             netto *= (1 - 0.375)
         akk += netto
@@ -204,13 +215,13 @@ def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift, eierf
     }), akk
 
 df, akk = beregn_lån(
-    st.session_state["lån"],
-    st.session_state["rente"],
-    st.session_state["løpetid"],
-    st.session_state["avdragsfri"],
+    int(st.session_state["lån"]),
+    float(st.session_state["rente"]),
+    int(st.session_state["løpetid"]),
+    int(st.session_state["avdragsfri"]),
     st.session_state["lånetype"],
-    leie,
-    drift_total,
+    int(leie),
+    int(drift_total),
     st.session_state["eierform"]
 )
 
@@ -233,52 +244,13 @@ with col2:
     st.line_chart(df[["Renter", "Avdrag"]], use_container_width=True)
     st.line_chart(df["Restgjeld"], use_container_width=True)
 
-# ---------- Grafer til rapport ----------
+# ---------- Grafer til rapport (helper) ----------
 def _fig_to_base64_png(fig):
     buf = BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight", dpi=150)
     plt.close(fig)
     buf.seek(0)
     return base64.b64encode(buf.read()).decode("utf-8")
-
-def _lag_grafer_base64(df):
-    vis_mnd = min(24, len(df))
-    netto = df["Netto cashflow"].head(vis_mnd).tolist()
-    months = list(range(1, vis_mnd + 1))
-    fig1 = plt.figure()
-    colors = ["#2e7d32" if v >= 0 else "#c62828" for v in netto]
-    plt.bar(months, netto, color=colors)
-    plt.axhline(0, linestyle="--")
-    plt.xlabel("Måned")
-    plt.ylabel("Netto cashflow")
-    plt.title("Netto cashflow (første 24 mnd)")
-    img1_b64 = _fig_to_base64_png(fig1)
-    fig2 = plt.figure()
-    plt.plot(df["Måned"], df["Akk. cashflow"])
-    plt.axhline(0, linestyle="--")
-    plt.xlabel("Måned")
-    plt.ylabel("Akkumulert cashflow")
-    plt.title("Akkumulert cashflow")
-    img2_b64 = _fig_to_base64_png(fig2)
-    return img1_b64, img2_b64
-
-import base64
-from io import BytesIO
-import matplotlib.pyplot as plt
-
-def _fig_to_base64_png(fig):
-    buf = BytesIO()
-    fig.savefig(buf, format="png", bbox_inches="tight", dpi=150)
-    plt.close(fig)
-    buf.seek(0)
-    return base64.b64encode(buf.read()).decode("utf-8")
-
-def _read_section(prefix: str, defaults: dict, ns: int) -> dict:
-    """Les aktive verdier fra session_state for en seksjon."""
-    out = {}
-    for k, d in defaults.items():
-        out[k] = int(st.session_state.get(f"{prefix}_{k}_{ns}", d if ns == 0 else 0))
-    return out
 
 def _charts_base64(df, kjøpesum, dokumentavgift, oppussing_total):
     # Netto cashflow – første 24 mnd, fargekodet
@@ -332,48 +304,128 @@ def lag_presentasjon_html(
     img_nett_b64, img_akk_b64, img_kake_b64 = _charts_base64(df, kjøpesum, dokumentavgift, oppussing_total)
     brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0
     netto_yield  = ((leie * 12 - drift_total) / total_investering) * 100 if total_investering else 0
-
-    finn_html = f'<p><a href="{finn_url}" target="_blank">🔗 Åpne Finn-annonse</a></p>' if finn_url else ""
+    finn_html = f'<p><a href="{finn_url}" target="_blank" style="text-decoration:none;">🔗 Åpne Finn-annonse</a></p>' if finn_url else ""
 
     html = f"""
-    <html>
-    <body>
-    <h1>{prosjekt_navn}</h1>
-    {finn_html}
-    <p>Kjøpesum: {kjøpesum:,.0f} kr</p>
-    <p>Dokumentavgift: {dokumentavgift:,.0f} kr</p>
-    <p>Oppussing: {oppussing_total:,.0f} kr</p>
-    <p>Drift: {drift_total:,.0f} kr</p>
-    <p>Total investering: {total_investering:,.0f} kr</p>
-    <p>Brutto yield: {brutto_yield:.2f}%</p>
-    <p>Netto yield: {netto_yield:.2f}%</p>
-    <h2>Grafer</h2>
-    <img src="data:image/png;base64,{img_nett_b64}"/>
-    <img src="data:image/png;base64,{img_akk_b64}"/>
-    <img src="data:image/png;base64,{img_kake_b64}"/>
-    </body>
-    </html>
-    """
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8" />
+<title>{prosjekt_navn} – Presentasjon</title>
+<style>
+  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 24px; color: #111; }}
+  h1, h2 {{ margin: 0 0 8px 0; }}
+  h1 {{ font-size: 28px; }}
+  h2 {{ font-size: 20px; margin-top: 24px; }}
+  .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
+  .card {{ border: 1px solid #eee; border-radius: 12px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.04); }}
+  .kpi {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }}
+  .kpi div {{ background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 12px; }}
+  .muted {{ color: #555; font-size: 12px; }}
+  table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
+  th, td {{ border-bottom: 1px solid #eee; padding: 6px 8px; text-align: right; }}
+  th:first-child, td:first-child {{ text-align: left; }}
+  img {{ max-width: 100%; height: auto; border-radius: 10px; border: 1px solid #eee; }}
+  .badge {{ background: #eef6ff; color: #0b63ce; font-weight: 600; padding: 4px 8px; border-radius: 999px; display: inline-block; font-size: 12px; }}
+</style>
+</head>
+<body>
+
+<h1>{projektsafe(prosjekt_navn)}</h1>
+<p class="muted">Generert fra AMO Eiendomskalkulator</p>
+{finn_html}
+
+<div class="kpi">
+  <div><div class="muted">Kjøpesum</div><div><strong>{kjøpesum:,.0f} kr</strong></div></div>
+  <div><div class="muted">Dokumentavgift</div><div><strong>{dokumentavgift:,.0f} kr</strong></div></div>
+  <div><div class="muted">Oppussing</div><div><strong>{oppussing_total:,.0f} kr</strong></div></div>
+  <div><div class="muted">Driftskostn./år</div><div><strong>{drift_total:,.0f} kr</strong></div></div>
+  <div><div class="muted">Total investering</div><div><strong>{total_investering:,.0f} kr</strong></div></div>
+  <div><div class="muted">Leie/mnd</div><div><strong>{leie:,.0f} kr</strong></div></div>
+  <div><div class="muted">Lån</div><div><strong>{lån:,.0f} kr</strong></div></div>
+  <div><div class="muted">Brutto yield</div><div><strong>{brutto_yield:.2f} %</strong></div></div>
+  <div><div class="muted">Netto yield</div><div><strong>{netto_yield:.2f} %</strong></div></div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Netto cashflow (24 mnd)</h2>
+    <img src="data:image/png;base64,{img_nett_b64}" alt="Netto cashflow søylediagram" />
+  </div>
+  <div class="card">
+    <h2>Akkumulert cashflow</h2>
+    <img src="data:image/png;base64,{img_akk_b64}" alt="Akkumulert cashflow linjediagram" />
+  </div>
+</div>
+
+<div class="card">
+  <h2>Investering – fordeling</h2>
+  <img src="data:image/png;base64,{img_kake_b64}" alt="Fordeling kjøpesum/dok.avgift/oppussing" />
+</div>
+
+<h2>Kontantstrøm – første 24 måneder</h2>
+<div class="card">
+<table>
+  <thead>
+    <tr>
+      <th>Mnd</th>
+      <th>Restgjeld</th>
+      <th>Avdrag</th>
+      <th>Renter</th>
+      <th>Netto</th>
+      <th>Akk.</th>
+    </tr>
+  </thead>
+  <tbody>
+    {build_rows(df)}
+  </tbody>
+</table>
+<p class="muted">Full tidsserie kan eksporteres fra appen (CSV/Excel).</p>
+</div>
+
+</body>
+</html>
+"""
     return html.encode("utf-8")
 
+def projektsafe(s: str) -> str:
+    # veldig enkel HTML-escape for tittelen
+    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+def build_rows(df: pd.DataFrame) -> str:
+    vis_mnd = min(24, len(df))
+    out = []
+    for i in range(vis_mnd):
+        r = df.iloc[i]
+        out.append(
+            f"<tr>"
+            f"<td>{int(r['Måned'])}</td>"
+            f"<td>{r['Restgjeld']:,.0f}</td>"
+            f"<td>{r['Avdrag']:,.0f}</td>"
+            f"<td>{r['Renter']:,.0f}</td>"
+            f"<td>{r['Netto cashflow']:,.0f}</td>"
+            f"<td>{r['Akk. cashflow']:,.0f}</td>"
+            f"</tr>"
+        )
+    return "".join(out)
 
 # --- Generer & last ned presentasjon ---
 rapport_bytes = lag_presentasjon_html(
-    df,
-    kjøpesum,
-    int(kjøpskostnader),
-    oppussing_total,
-    drift_total,
-    total_investering,
-    leie,
-    st.session_state["lån"],
-    st.session_state["rente"],
-    st.session_state["løpetid"],
-    st.session_state["avdragsfri"],
-    st.session_state["lånetype"],
-    st.session_state["eierform"],
-    proj_navn,
-    finn_url
+    df=df,
+    kjøpesum=int(kjøpesum),
+    dokumentavgift=int(kjøpskostnader),
+    oppussing_total=int(oppussing_total),
+    drift_total=int(drift_total),
+    total_investering=int(total_investering),
+    leie=int(leie),
+    lån=int(st.session_state["lån"]),
+    rente=float(st.session_state["rente"]),
+    løpetid=int(st.session_state["løpetid"]),
+    avdragsfri=int(st.session_state["avdragsfri"]),
+    lånetype=st.session_state["lånetype"],
+    eierform=st.session_state["eierform"],
+    prosjekt_navn=proj_navn,
+    finn_url=finn_url,
 )
 
 st.markdown("---")
@@ -386,18 +438,6 @@ st.download_button(
     use_container_width=True,
 )
 st.caption("Tips: Åpne HTML → Print → Lagre som PDF.")
-    # Les seksjonsverdier hvis ikke gitt
-    if opp_vals is None and opp_defaults is not None and opp_ns is not None:
-        opp_vals = _read_section("opp", opp_defaults, opp_ns)
-    if drift_vals is None and drift_defaults is not None and drift_ns is not None:
-        drift_vals = _read_section("drift", drift_defaults, drift_ns)
-
-    # Grafer
-    img_nett_b64, img_akk_b64, img_kake_b64 = _charts_base64(df, kjøpesum, dokumentavgift, oppussing_total)
-
-    # KPI’er
-    brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0
-    netto_yield  = ((leie * 12 - drift_total) / total_investering) * 100 if total_investering else 0
 
 # ---------- Lagre persist til fil ----------
 if st.session_state["_dirty"]:
