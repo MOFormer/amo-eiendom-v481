@@ -488,7 +488,7 @@ def lag_presentasjon_html(
 rapport_bytes = lag_presentasjon_html(
     df=df,
     kjøpesum=kjøpesum,
-    kjøpskostnader=int(kjøpesum * 0.025),
+    Dokumentavgift=int(kjøpesum * 0.025),
     oppussing_total=int(oppussing_total),
     drift_total=int(drift_total),
     total_investering=int(total_investering),
