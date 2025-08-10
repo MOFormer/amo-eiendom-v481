@@ -355,7 +355,7 @@ def _lag_grafer_base64(df):
 def lag_presentasjon_html(
     df: pd.DataFrame,
     kjøpesum: int,
-    kjøpskostnader: int,
+    Dokumentavgift: int,
     oppussing_total: int,
     drift_total: int,
     total_investering: int,
