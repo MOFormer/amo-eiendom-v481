@@ -337,19 +337,16 @@ def lag_presentasjon_html(
 ) -> bytes:
 
 # --- Generer & last ned presentasjon (legg dette ETTER df/verdier er beregnet) ---
-rapport_bytes = lag_presentasjon_html(
-
-# Flytt til sidebaren for enkel tilgang
-st.sidebar.markdown("---")
-st.sidebar.subheader("📄 Presentasjon")
-st.sidebar.download_button(
+st.markdown("---")
+st.subheader("📄 Presentasjon")
+st.download_button(
     "Last ned presentasjon (HTML)",
     data=rapport_bytes,
     file_name="rapport.html",
     mime="text/html",
     use_container_width=True,
 )
-st.sidebar.caption("Tips: Åpne HTML → Print → Lagre som PDF.")
+st.caption("Tips: Åpne HTML → Print → Lagre som PDF.")
 
     # Les seksjonsverdier hvis ikke gitt
     if opp_vals is None and opp_defaults is not None and opp_ns is not None:
