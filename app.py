@@ -20,7 +20,7 @@ st.title("Eiendomskalkulator – med synlig scrollbar")
 st.sidebar.header("🧾 Eiendomsinfo")
 kjøpesum = st.sidebar.number_input("Kjøpesum", value=4_000_000, step=100_000)
 leie = st.sidebar.number_input("Leieinntekter / mnd", value=22_000)
-kjøpskostnader = kjøpesum * 0.025  # 2.5 % kjøpsomkostninger
+Dokumentavgift = kjøpesum * 0.025  # 2.5 % kjøpsomkostninger
 
 # ===========================
 # OPPUSSING (RERUN-FREE, ROBUST)
@@ -206,7 +206,7 @@ for k, v in lån_defaults.items():
         st.session_state[k] = v
 
 # Total investering nå
-total_investering = kjøpesum + kjøpskostnader + oppussing_total
+total_investering = kjøpesum + Dokumentavgift + oppussing_total
 lånebeløp = max(total_investering - st.session_state["egenkapital"], 0)
 st.session_state["lån"] = lånebeløp  # tilgjengelig for beregning
 
@@ -339,7 +339,7 @@ def _lag_grafer_base64(df):
 def lag_presentasjon_html(
     df: pd.DataFrame,
     kjøpesum: int,
-    kjøpskostnader: int,
+    Dokumentavgift: int,
     oppussing_total: int,
     drift_total: int,
     total_investering: int,
@@ -405,7 +405,7 @@ def lag_presentasjon_html(
 
 <div class="kpi">
   <div><div class="muted">Kjøpesum</div><div><strong>{kjøpesum:,.0f} kr</strong></div></div>
-  <div><div class="muted">Kjøpskostnader</div><div><strong>{kjøpskostnader:,.0f} kr</strong></div></div>
+  <div><div class="muted">Dokumentavgift</div><div><strong>{Dokumentavgift:,.0f} kr</strong></div></div>
   <div><div class="muted">Oppussing</div><div><strong>{oppussing_total:,.0f} kr</strong></div></div>
   <div><div class="muted">Driftskostn./år</div><div><strong>{drift_total:,.0f} kr</strong></div></div>
   <div><div class="muted">Total investering</div><div><strong>{total_investering:,.0f} kr</strong></div></div>
@@ -460,7 +460,7 @@ def lag_presentasjon_html(
 rapport_bytes = lag_presentasjon_html(
     df=df,
     kjøpesum=kjøpesum,
-    kjøpskostnader=int(kjøpesum * 0.025),
+    Dokumentavgift=int(kjøpesum * 0.025),
     oppussing_total=int(oppussing_total),
     drift_total=int(drift_total),
     total_investering=int(total_investering),
