@@ -2,13 +2,8 @@ import streamlit as st
 import pandas as pd
 import json
 from pathlib import Path
-from io import BytesIO
-import base64
-import matplotlib.pyplot as plt
 
-# ===========================
-# PERSIST (må komme FØR UI)
-# ===========================
+# ---------- PERSIST / AUTOSAVE (MÅ KOMME FØR NOE ANNEN KODE) ----------
 PERSIST_PATH = Path("autosave.json")
 
 def _load_persist() -> dict:
@@ -25,6 +20,7 @@ def _save_persist(data: dict):
     except Exception:
         pass
 
+# init session_state nøkler før bruk
 if "persist" not in st.session_state:
     st.session_state["persist"] = _load_persist()
 if "_dirty" not in st.session_state:
@@ -32,6 +28,7 @@ if "_dirty" not in st.session_state:
 
 def mark_dirty():
     st.session_state["_dirty"] = True
+# ----------------------------------------------------------------------
 
 # ===========================
 # Layout & stil
