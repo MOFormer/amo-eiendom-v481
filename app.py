@@ -36,6 +36,29 @@ def mark_dirty():
 st.set_page_config(layout="wide")
 st.title("AMO Eiendomskalkulator")
 
+# --- Profiles store (må være før pending/bruk) ---
+PROFILES_PATH = Path("profiles.json")
+
+def _load_profiles() -> dict:
+    if PROFILES_PATH.exists():
+        try:
+            return json.loads(PROFILES_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+def _save_profiles(data: dict):
+    try:
+        PROFILES_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+if "profiles" not in st.session_state:
+    st.session_state["profiles"] = _load_profiles()
+
+if "pending_profile_name" not in st.session_state:
+    st.session_state["pending_profile_name"] = ""
+
 # --- Pending profile load (må kjøres før widgets bygges) ---
 if "pending_profile_name" in st.session_state and st.session_state["pending_profile_name"]:
     sel = st.session_state["pending_profile_name"]
@@ -332,13 +355,7 @@ if st.sidebar.button("💾 Lagre profil"):
     _save_profiles(st.session_state["profiles"])
     st.sidebar.success(f"Lagret: {name}")
 
-# Velg eksisterende profil
-existing = ["(Velg)"] + sorted(st.session_state["profiles"].keys())
-sel = st.sidebar.selectbox("Åpne / Slett profil", options=existing, index=0)
 
-# Last valgt profil (putter verdiene inn i appen og persist)
-if sel != "(Velg)" and st.sidebar.button("📂 Last profil"):
-    p = st.session_state["profiles"][sel]
 
     # Grunnfelter -> persist
     st.session_state["persist"]["prosjekt_navn"] = p.get("prosjekt_navn", sel)
