@@ -73,16 +73,7 @@ if finn_url and not finn_url.startswith(("http://", "https://")):
 st.session_state["persist"]["prosjekt_navn"] = proj_navn
 st.session_state["persist"]["finn_url"] = finn_url
 
-# Etter at du har hentet p = st.session_state["profiles"][sel]
-new_name = p.get("prosjekt_navn", sel)
-st.session_state["persist"]["prosjekt_navn"] = new_name
-st.session_state["prosjektnavn_input"] = new_name  # ← tving oppdatering av widget
 
-new_url = p.get("finn_url", "")
-st.session_state["persist"]["finn_url"] = new_url
-st.session_state["finn_url_input"] = new_url       # ← oppdater URL-feltet
-
-# (resten som før: kjøpesum, leie, opp/drift, lån, bump ns, etc.)
 
 kjøpesum = st.sidebar.number_input(
     "Kjøpesum",
@@ -322,20 +313,24 @@ sel = st.sidebar.selectbox("Åpne / Slett profil", options=existing, index=0)
 if sel != "(Velg)" and st.sidebar.button("📂 Last profil"):
     p = st.session_state["profiles"][sel]
 
-    # Grunnfelter
+    # Grunnfelter -> persist
     st.session_state["persist"]["prosjekt_navn"] = p.get("prosjekt_navn", sel)
     st.session_state["persist"]["finn_url"]      = p.get("finn_url", "")
     st.session_state["persist"]["note"]          = p.get("note", "")
 
-    # Kjøpesum/leie
+    # Tving oppdatering av *widgetene* (tekstfeltene) ved å sette deres keys
+    st.session_state["prosjektnavn_input"] = st.session_state["persist"]["prosjekt_navn"]
+    st.session_state["finn_url_input"]     = st.session_state["persist"]["finn_url"]
+
+    # Kjøpesum/leie -> persist
     st.session_state["persist"]["kjøpesum"] = p.get("kjøpesum", 0)
     st.session_state["persist"]["leie"]     = p.get("leie", 0)
 
-    # Oppussing/drift
+    # Oppussing/drift -> persist
     st.session_state["persist"]["opp"]   = p.get("oppussing", {})
     st.session_state["persist"]["drift"] = p.get("drift", {})
 
-    # Lån
+    # Lån -> direkte i session_state (widgets leser herfra)
     st.session_state["egenkapital"] = p.get("egenkapital", st.session_state["egenkapital"])
     st.session_state["rente"]       = p.get("rente",       st.session_state["rente"])
     st.session_state["løpetid"]     = p.get("løpetid",     st.session_state["løpetid"])
@@ -343,20 +338,16 @@ if sel != "(Velg)" and st.sidebar.button("📂 Last profil"):
     st.session_state["lånetype"]    = p.get("lånetype",    st.session_state["lånetype"])
     st.session_state["eierform"]    = p.get("eierform",    st.session_state["eierform"])
 
-    # Remount inputs: bump namespaces og (valgfr.) åpne expandere
+    # Remount inputs: (om du bruker namespacing et annet sted)
     st.session_state["opp_ns"]   = st.session_state.get("opp_ns", 0) + 1
     st.session_state["drift_ns"] = st.session_state.get("drift_ns", 0) + 1
     st.session_state["opp_expanded"]   = True
     st.session_state["drift_expanded"] = True
 
-    # Lagre endringer til fil, ingen eksplisitt rerun nødvendig
+    # (valgfritt) marker dirty og lagre profiler til fil
+    st.session_state["_dirty"] = True
     _save_profiles(st.session_state["profiles"])
     st.sidebar.info(f"Lastet: {sel}")
-# Slett valgt profil
-if sel != "(Velg)" and st.sidebar.button("🗑️ Slett profil"):
-    st.session_state["profiles"].pop(sel, None)
-    _save_profiles(st.session_state["profiles"])
-    st.sidebar.warning(f"Slettet: {sel}")
 
 # === HOVEDINNHOLD (resultater til høyre) ===
 st.markdown("---")
