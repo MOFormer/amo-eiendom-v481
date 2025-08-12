@@ -281,15 +281,8 @@ def _charts_base64(df, kjøpesum, dokumentavgift, oppussing_total):
     plt.xlabel("Måned"); plt.ylabel("Akkumulert cashflow"); plt.title("Akkumulert cashflow")
     img_akk_b64 = _fig_to_base64_png(fig2)
 
-    # Kostnadsfordeling (kake): Kjøpesum vs. dokumentavgift vs. oppussing
-    labels = ["Kjøpesum", "Dokumentavgift", "Oppussing"]
-    sizes = [kjøpesum, dokumentavgift, oppussing_total]
-    fig3 = plt.figure()
-    plt.pie(sizes, labels=labels, autopct="%1.0f%%", startangle=90)
-    plt.title("Investering – fordeling")
-    img_kake_b64 = _fig_to_base64_png(fig3)
-
-    return img_nett_b64, img_akk_b64, img_kake_b64
+    # Returnér KUN to bilder nå
+    return img_nett_b64, img_akk_b64
 
 # ---------- HTML-rapport ----------
 def lag_presentasjon_html(
@@ -310,18 +303,30 @@ def lag_presentasjon_html(
     finn_url: str = "",
     note: str = "",
 ) -> bytes:
+    # Grafer
+    img_nett_b64, img_akk_b64 = _charts_base64(df, kjøpesum, dokumentavgift, oppussing_total)
 
-    img_nett_b64, img_akk_b64, img_kake_b64 = _charts_base64(df, kjøpesum, dokumentavgift, oppussing_total)
+    # KPI’er
     brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0
     netto_yield  = ((leie * 12 - drift_total) / total_investering) * 100 if total_investering else 0
-    finn_html = f'<p><a href="{finn_url}" target="_blank" style="text-decoration:none;">🔗 Åpne Finn-annonse</a></p>' if finn_url else ""
+
+    finn_html = (
+        f'<p><a href="{finn_url}" target="_blank" '
+        f'style="text-decoration:none;padding:8px 12px;border:1px solid #0b63ce;'
+        f'border-radius:8px;color:#0b63ce;">🔗 Åpne Finn-annonse</a></p>'
+        if finn_url else ""
+    )
+
+    def _safe(s: str) -> str:
+        # veldig enkel escaping for HTML
+        return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
     html = f"""
 <!DOCTYPE html>
 <html lang="no">
 <head>
 <meta charset="utf-8" />
-<title>{prosjekt_navn} – Presentasjon</title>
+<title>{_safe(prosjekt_navn)} – Presentasjon</title>
 <style>
   body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 24px; color: #111; }}
   h1, h2 {{ margin: 0 0 8px 0; }}
@@ -329,7 +334,7 @@ def lag_presentasjon_html(
   h2 {{ font-size: 20px; margin-top: 24px; }}
   .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
   .card {{ border: 1px solid #eee; border-radius: 12px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.04); }}
-  .kpi {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }}
+  .kpi {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }}
   .kpi div {{ background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 12px; }}
   .muted {{ color: #555; font-size: 12px; }}
   table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
@@ -341,11 +346,11 @@ def lag_presentasjon_html(
 </head>
 <body>
 
-<h1>{projektsafe(prosjekt_navn)}</h1>
-<p class="muted">Generert fra AMO Eiendomskalkulator</p>
-
+<h1>{_safe(prosjekt_navn)}</h1>
+<p class="muted">Generert automatisk fra AMO Eiendomskalkulator</p>
 {finn_html}
-{f'<div class="card"><h2>Notater</h2><p>{projektsafe(note).replace("\\n", "<br>")}</p></div>' if note else ""}
+
+{"<div class='card'><h2>Notater</h2><p>" + _safe(note).replace("\\n","<br>") + "</p></div>" if note else ""}
 
 <div class="kpi">
   <div><div class="muted">Kjøpesum</div><div><strong>{kjøpesum:,.0f} kr</strong></div></div>
@@ -354,10 +359,20 @@ def lag_presentasjon_html(
   <div><div class="muted">Driftskostn./år</div><div><strong>{drift_total:,.0f} kr</strong></div></div>
   <div><div class="muted">Total investering</div><div><strong>{total_investering:,.0f} kr</strong></div></div>
   <div><div class="muted">Leie/mnd</div><div><strong>{leie:,.0f} kr</strong></div></div>
-  <div><div class="muted">Lån</div><div><strong>{lån:,.0f} kr</strong></div></div>
+  <div><div class="muted">Egenkapital</div><div><strong>{st.session_state["egenkapital"]:,.0f} kr</strong></div></div>
+  <div><div class="muted">Rente</div><div><strong>{rente:.2f} %</strong></div></div>
   <div><div class="muted">Brutto yield</div><div><strong>{brutto_yield:.2f} %</strong></div></div>
   <div><div class="muted">Netto yield</div><div><strong>{netto_yield:.2f} %</strong></div></div>
 </div>
+
+<h2>Finansiering</h2>
+<p class="muted">
+  Lånetype: <span class="badge">{_safe(lånetype)}</span> &nbsp; | &nbsp;
+  Rente: <strong>{rente:.2f}%</strong> &nbsp; | &nbsp;
+  Løpetid: <strong>{løpetid} år</strong> &nbsp; | &nbsp;
+  Avdragsfri: <strong>{avdragsfri} år</strong> &nbsp; | &nbsp;
+  Eierform: <strong>{_safe(eierform)}</strong>
+</p>
 
 <div class="grid">
   <div class="card">
@@ -368,11 +383,6 @@ def lag_presentasjon_html(
     <h2>Akkumulert cashflow</h2>
     <img src="data:image/png;base64,{img_akk_b64}" alt="Akkumulert cashflow linjediagram" />
   </div>
-</div>
-
-<div class="card">
-  <h2>Investering – fordeling</h2>
-  <img src="data:image/png;base64,{img_kake_b64}" alt="Fordeling kjøpesum/dok.avgift/oppussing" />
 </div>
 
 <h2>Kontantstrøm – første 24 måneder</h2>
@@ -389,7 +399,23 @@ def lag_presentasjon_html(
     </tr>
   </thead>
   <tbody>
-    {build_rows(df)}
+"""
+    # Tabellrader (24 mnd)
+    vis_mnd = min(24, len(df))
+    for i in range(vis_mnd):
+        r = df.iloc[i]
+        html += (
+            f"<tr>"
+            f"<td>{int(r['Måned'])}</td>"
+            f"<td>{r['Restgjeld']:,.0f}</td>"
+            f"<td>{r['Avdrag']:,.0f}</td>"
+            f"<td>{r['Renter']:,.0f}</td>"
+            f"<td>{r['Netto cashflow']:,.0f}</td>"
+            f"<td>{r['Akk. cashflow']:,.0f}</td>"
+            f"</tr>"
+        )
+
+    html += """
   </tbody>
 </table>
 <p class="muted">Full tidsserie kan eksporteres fra appen (CSV/Excel).</p>
