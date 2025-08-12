@@ -41,15 +41,22 @@ st.sidebar.header("🧾 Eiendomsinfo")
 
 proj_navn = st.sidebar.text_input(
     "Prosjektnavn",
+    key="prosjektnavn_input",  # ← fast key
     value=st.session_state["persist"].get("prosjekt_navn", "Eiendomsprosjekt"),
     on_change=mark_dirty,
 )
+st.session_state["persist"]["prosjekt_navn"] = proj_navn
+
 finn_url = st.sidebar.text_input(
     "Finn-annonse (URL)",
+    key="finn_url_input",  # ← fast key
     value=st.session_state["persist"].get("finn_url", ""),
     on_change=mark_dirty,
     placeholder="https://www.finn.no/realestate/..."
 )
+if finn_url and not finn_url.startswith(("http://", "https://")):
+    finn_url = "https://" + finn_url
+st.session_state["persist"]["finn_url"] = finn_url
 
 note = st.sidebar.text_area(
     "Prosjektnotater",
@@ -65,6 +72,17 @@ if finn_url and not finn_url.startswith(("http://", "https://")):
 
 st.session_state["persist"]["prosjekt_navn"] = proj_navn
 st.session_state["persist"]["finn_url"] = finn_url
+
+# Etter at du har hentet p = st.session_state["profiles"][sel]
+new_name = p.get("prosjekt_navn", sel)
+st.session_state["persist"]["prosjekt_navn"] = new_name
+st.session_state["prosjektnavn_input"] = new_name  # ← tving oppdatering av widget
+
+new_url = p.get("finn_url", "")
+st.session_state["persist"]["finn_url"] = new_url
+st.session_state["finn_url_input"] = new_url       # ← oppdater URL-feltet
+
+# (resten som før: kjøpesum, leie, opp/drift, lån, bump ns, etc.)
 
 kjøpesum = st.sidebar.number_input(
     "Kjøpesum",
