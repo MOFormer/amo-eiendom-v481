@@ -36,6 +36,46 @@ def mark_dirty():
 st.set_page_config(layout="wide")
 st.title("AMO Eiendomskalkulator")
 
+# --- Pending profile load (må kjøres før widgets bygges) ---
+if "pending_profile_name" in st.session_state and st.session_state["pending_profile_name"]:
+    sel = st.session_state["pending_profile_name"]
+    p = st.session_state["profiles"].get(sel, {})
+
+    # Grunnfelter -> persist
+    st.session_state["persist"]["prosjekt_navn"] = p.get("prosjekt_navn", sel)
+    st.session_state["persist"]["finn_url"]      = p.get("finn_url", "")
+    st.session_state["persist"]["note"]          = p.get("note", "")
+
+    # Kjøpesum/leie
+    st.session_state["persist"]["kjøpesum"] = p.get("kjøpesum", 0)
+    st.session_state["persist"]["leie"]     = p.get("leie", 0)
+
+    # Oppussing/drift
+    st.session_state["persist"]["opp"]   = p.get("oppussing", {})
+    st.session_state["persist"]["drift"] = p.get("drift", {})
+
+    # Lån
+    st.session_state["egenkapital"] = p.get("egenkapital", st.session_state.get("egenkapital", 300000))
+    st.session_state["rente"]       = p.get("rente",       st.session_state.get("rente", 5.0))
+    st.session_state["løpetid"]     = p.get("løpetid",     st.session_state.get("løpetid", 25))
+    st.session_state["avdragsfri"]  = p.get("avdragsfri",  st.session_state.get("avdragsfri", 0))
+    st.session_state["lånetype"]    = p.get("lånetype",    st.session_state.get("lånetype", "Annuitetslån"))
+    st.session_state["eierform"]    = p.get("eierform",    st.session_state.get("eierform", "Privat"))
+
+    # Sørg for at neste render bruker riktige widget-verdier:
+    st.session_state["prosjektnavn_input"] = st.session_state["persist"]["prosjekt_navn"]
+    st.session_state["finn_url_input"]     = st.session_state["persist"]["finn_url"]
+
+    # (Hvis du bruker ns/expanders): bump og åpne
+    st.session_state["opp_ns"]   = st.session_state.get("opp_ns", 0) + 1
+    st.session_state["drift_ns"] = st.session_state.get("drift_ns", 0) + 1
+    st.session_state["opp_expanded"]   = True
+    st.session_state["drift_expanded"] = True
+
+    # Tøm pending og rerun FØR widgets rendres
+    st.session_state["pending_profile_name"] = ""
+    st.rerun()
+
 # ---------- Sidebar: Grunninfo ----------
 st.sidebar.header("🧾 Eiendomsinfo")
 
@@ -246,31 +286,18 @@ df, akk = beregn_lån(
 # ===========================
 # ENKEL LAGRE / LAST / SLETT
 # ===========================
-import json
-from pathlib import Path
+existing = ["(Velg)"] + sorted(st.session_state["profiles"].keys())
+sel = st.sidebar.selectbox("Åpne / Slett profil", options=existing, index=0)
 
-PROFILES_PATH = Path("profiles.json")
+def _queue_load_profile(name: str):
+    st.session_state["pending_profile_name"] = name
 
-def _load_profiles() -> dict:
-    if PROFILES_PATH.exists():
-        try:
-            return json.loads(PROFILES_PATH.read_text(encoding="utf-8"))
-        except Exception:
-            return {}
-    return {}
-
-def _save_profiles(data: dict):
-    try:
-        PROFILES_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    except Exception:
-        pass
-
-# init i session_state
-if "profiles" not in st.session_state:
-    st.session_state["profiles"] = _load_profiles()
-
-st.sidebar.markdown("---")
-st.sidebar.subheader("📁 Prosjektprofiler")
+if sel != "(Velg)":
+    st.sidebar.button("📂 Last profil", on_click=_queue_load_profile, args=(sel,))
+    st.sidebar.button("🗑️ Slett profil", on_click=lambda: (
+        st.session_state["profiles"].pop(sel, None),
+        _save_profiles(st.session_state["profiles"])
+    ))
 
 # Navn på profil (default: prosjektnavn eller generisk)
 profile_name = st.sidebar.text_input(
