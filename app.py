@@ -306,33 +306,34 @@ if sel != "(Velg)" and st.sidebar.button("📂 Last profil"):
 
     # Grunnfelter
     st.session_state["persist"]["prosjekt_navn"] = p.get("prosjekt_navn", sel)
-    st.session_state["persist"]["finn_url"] = p.get("finn_url", "")
-    st.session_state["persist"]["note"] = p.get("note", "")
+    st.session_state["persist"]["finn_url"]      = p.get("finn_url", "")
+    st.session_state["persist"]["note"]          = p.get("note", "")
 
     # Kjøpesum/leie
     st.session_state["persist"]["kjøpesum"] = p.get("kjøpesum", 0)
-    st.session_state["persist"]["leie"] = p.get("leie", 0)
+    st.session_state["persist"]["leie"]     = p.get("leie", 0)
 
     # Oppussing/drift
-    st.session_state["persist"]["opp"] = p.get("oppussing", {})
+    st.session_state["persist"]["opp"]   = p.get("oppussing", {})
     st.session_state["persist"]["drift"] = p.get("drift", {})
 
     # Lån
     st.session_state["egenkapital"] = p.get("egenkapital", st.session_state["egenkapital"])
-    st.session_state["rente"]       = p.get("rente", st.session_state["rente"])
-    st.session_state["løpetid"]     = p.get("løpetid", st.session_state["løpetid"])
-    st.session_state["avdragsfri"]  = p.get("avdragsfri", st.session_state["avdragsfri"])
-    st.session_state["lånetype"]    = p.get("lånetype", st.session_state["lånetype"])
-    st.session_state["eierform"]    = p.get("eierform", st.session_state["eierform"])
+    st.session_state["rente"]       = p.get("rente",       st.session_state["rente"])
+    st.session_state["løpetid"]     = p.get("løpetid",     st.session_state["løpetid"])
+    st.session_state["avdragsfri"]  = p.get("avdragsfri",  st.session_state["avdragsfri"])
+    st.session_state["lånetype"]    = p.get("lånetype",    st.session_state["lånetype"])
+    st.session_state["eierform"]    = p.get("eierform",    st.session_state["eierform"])
 
-    # Tving nye widget-keys (så feltene “tar inn” nye verdier)
+    # Remount inputs: bump namespaces og (valgfr.) åpne expandere
     st.session_state["opp_ns"]   = st.session_state.get("opp_ns", 0) + 1
     st.session_state["drift_ns"] = st.session_state.get("drift_ns", 0) + 1
+    st.session_state["opp_expanded"]   = True
+    st.session_state["drift_expanded"] = True
 
-    # Autosave for å huske øyeblikkelig
+    # Lagre endringer til fil, ingen eksplisitt rerun nødvendig
     _save_profiles(st.session_state["profiles"])
-    st.experimental_rerun()
-
+    st.sidebar.info(f"Lastet: {sel}")
 # Slett valgt profil
 if sel != "(Velg)" and st.sidebar.button("🗑️ Slett profil"):
     st.session_state["profiles"].pop(sel, None)
