@@ -309,27 +309,15 @@ df, akk = beregn_lån(
 # ===========================
 # ENKEL LAGRE / LAST / SLETT
 # ===========================
-existing = ["(Velg)"] + sorted(st.session_state["profiles"].keys())
-sel = st.sidebar.selectbox("Åpne / Slett profil", options=existing, index=0)
 
-def _queue_load_profile(name: str):
-    st.session_state["pending_profile_name"] = name
-
-if sel != "(Velg)":
-    st.sidebar.button("📂 Last profil", on_click=_queue_load_profile, args=(sel,))
-    st.sidebar.button("🗑️ Slett profil", on_click=lambda: (
-        st.session_state["profiles"].pop(sel, None),
-        _save_profiles(st.session_state["profiles"])
-    ))
-
-# Navn på profil (default: prosjektnavn eller generisk)
+# Navn på profil å lagre som
 profile_name = st.sidebar.text_input(
     "Profilnavn",
-    value=st.session_state.get("prosjekt_navn") or st.session_state["persist"].get("prosjekt_navn", "Eiendomsprosjekt")
+    key="profile_name_input",
+    value=st.session_state["persist"].get("prosjekt_navn", "Eiendomsprosjekt"),
 )
 
 def _current_profile_payload() -> dict:
-    # Pakk sammen “gjeldende prosjekt” til en dict
     return {
         "prosjekt_navn": st.session_state["persist"].get("prosjekt_navn", profile_name),
         "finn_url":      st.session_state["persist"].get("finn_url", ""),
@@ -339,7 +327,6 @@ def _current_profile_payload() -> dict:
         "dokumentavgift": int(kjøpesum * 0.025),
         "oppussing":     {k: int(st.session_state["persist"].get("opp", {}).get(k, v)) for k, v in oppussing_defaults.items()},
         "drift":         {k: int(st.session_state["persist"].get("drift", {}).get(k, v)) for k, v in driftskostnader_defaults.items()},
-        # Lån
         "egenkapital":   int(st.session_state["egenkapital"]),
         "rente":         float(st.session_state["rente"]),
         "løpetid":       int(st.session_state["løpetid"]),
@@ -348,30 +335,30 @@ def _current_profile_payload() -> dict:
         "eierform":      st.session_state["eierform"],
     }
 
-# --- Lagre nåværende prosjekt som profil ---
-if st.sidebar.button("💾 Lagre profil"):
-    name = (st.sidebar.session_state.get("profilnavn_input") or "").strip() or "Uten navn"
-    # Hvis du vil bruke feltet over:
+# Lagre profil
+if st.sidebar.button("💾 Lagre profil", key="btn_save_profile"):
     name = (profile_name or "").strip() or "Uten navn"
     st.session_state["profiles"][name] = _current_profile_payload()
     _save_profiles(st.session_state["profiles"])
     st.sidebar.success(f"Lagret: {name}")
 
-# --- Åpne / Slette profiler ---
+st.sidebar.markdown("---")
+
+# ÉN (1) selectbox for åpne/slette – MED KEY
 existing = ["(Velg)"] + sorted(st.session_state["profiles"].keys())
-sel = st.sidebar.selectbox("Åpne / Slett profil", options=existing, index=0)
+sel = st.sidebar.selectbox("Åpne / Slett profil", options=existing, index=0, key="profile_select")
 
 def _queue_load_profile(name: str):
     st.session_state["pending_profile_name"] = name
 
-if sel != "(Velg)":
-    st.sidebar.button("📂 Last profil", on_click=_queue_load_profile, args=(sel,))
-    def _delete_selected():
-        st.session_state["profiles"].pop(sel, None)
-        _save_profiles(st.session_state["profiles"])
-        st.sidebar.warning(f"Slettet: {sel}")
-    st.sidebar.button("🗑️ Slett profil", on_click=_delete_selected)
+def _delete_selected(name: str):
+    st.session_state["profiles"].pop(name, None)
+    _save_profiles(st.session_state["profiles"])
+    st.sidebar.warning(f"Slettet: {name}")
 
+if sel != "(Velg)":
+    st.sidebar.button("📂 Last profil", key="btn_load_profile", on_click=_queue_load_profile, args=(sel,))
+    st.sidebar.button("🗑️ Slett profil", key="btn_delete_profile", on_click=_delete_selected, args=(sel,))
 
 
 # === HOVEDINNHOLD (resultater til høyre) ===
