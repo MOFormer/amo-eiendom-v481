@@ -348,50 +348,31 @@ def _current_profile_payload() -> dict:
         "eierform":      st.session_state["eierform"],
     }
 
-# Lagre
+# --- Lagre nåværende prosjekt som profil ---
 if st.sidebar.button("💾 Lagre profil"):
-    name = profile_name.strip() or "Uten navn"
+    name = (st.sidebar.session_state.get("profilnavn_input") or "").strip() or "Uten navn"
+    # Hvis du vil bruke feltet over:
+    name = (profile_name or "").strip() or "Uten navn"
     st.session_state["profiles"][name] = _current_profile_payload()
     _save_profiles(st.session_state["profiles"])
     st.sidebar.success(f"Lagret: {name}")
 
+# --- Åpne / Slette profiler ---
+existing = ["(Velg)"] + sorted(st.session_state["profiles"].keys())
+sel = st.sidebar.selectbox("Åpne / Slett profil", options=existing, index=0)
+
+def _queue_load_profile(name: str):
+    st.session_state["pending_profile_name"] = name
+
+if sel != "(Velg)":
+    st.sidebar.button("📂 Last profil", on_click=_queue_load_profile, args=(sel,))
+    def _delete_selected():
+        st.session_state["profiles"].pop(sel, None)
+        _save_profiles(st.session_state["profiles"])
+        st.sidebar.warning(f"Slettet: {sel}")
+    st.sidebar.button("🗑️ Slett profil", on_click=_delete_selected)
 
 
-    # Grunnfelter -> persist
-    st.session_state["persist"]["prosjekt_navn"] = p.get("prosjekt_navn", sel)
-    st.session_state["persist"]["finn_url"]      = p.get("finn_url", "")
-    st.session_state["persist"]["note"]          = p.get("note", "")
-
-    # Tving oppdatering av *widgetene* (tekstfeltene) ved å sette deres keys
-    st.session_state["prosjektnavn_input"] = st.session_state["persist"]["prosjekt_navn"]
-    st.session_state["finn_url_input"]     = st.session_state["persist"]["finn_url"]
-
-    # Kjøpesum/leie -> persist
-    st.session_state["persist"]["kjøpesum"] = p.get("kjøpesum", 0)
-    st.session_state["persist"]["leie"]     = p.get("leie", 0)
-
-    # Oppussing/drift -> persist
-    st.session_state["persist"]["opp"]   = p.get("oppussing", {})
-    st.session_state["persist"]["drift"] = p.get("drift", {})
-
-    # Lån -> direkte i session_state (widgets leser herfra)
-    st.session_state["egenkapital"] = p.get("egenkapital", st.session_state["egenkapital"])
-    st.session_state["rente"]       = p.get("rente",       st.session_state["rente"])
-    st.session_state["løpetid"]     = p.get("løpetid",     st.session_state["løpetid"])
-    st.session_state["avdragsfri"]  = p.get("avdragsfri",  st.session_state["avdragsfri"])
-    st.session_state["lånetype"]    = p.get("lånetype",    st.session_state["lånetype"])
-    st.session_state["eierform"]    = p.get("eierform",    st.session_state["eierform"])
-
-    # Remount inputs: (om du bruker namespacing et annet sted)
-    st.session_state["opp_ns"]   = st.session_state.get("opp_ns", 0) + 1
-    st.session_state["drift_ns"] = st.session_state.get("drift_ns", 0) + 1
-    st.session_state["opp_expanded"]   = True
-    st.session_state["drift_expanded"] = True
-
-    # (valgfritt) marker dirty og lagre profiler til fil
-    st.session_state["_dirty"] = True
-    _save_profiles(st.session_state["profiles"])
-    st.sidebar.info(f"Lastet: {sel}")
 
 # === HOVEDINNHOLD (resultater til høyre) ===
 st.markdown("---")
