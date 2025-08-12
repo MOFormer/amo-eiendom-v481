@@ -234,6 +234,111 @@ df, akk = beregn_lån(
     st.session_state["eierform"]
 )
 
+# ===========================
+# ENKEL LAGRE / LAST / SLETT
+# ===========================
+import json
+from pathlib import Path
+
+PROFILES_PATH = Path("profiles.json")
+
+def _load_profiles() -> dict:
+    if PROFILES_PATH.exists():
+        try:
+            return json.loads(PROFILES_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+def _save_profiles(data: dict):
+    try:
+        PROFILES_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+# init i session_state
+if "profiles" not in st.session_state:
+    st.session_state["profiles"] = _load_profiles()
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("📁 Prosjektprofiler")
+
+# Navn på profil (default: prosjektnavn eller generisk)
+profile_name = st.sidebar.text_input(
+    "Profilnavn",
+    value=st.session_state.get("prosjekt_navn") or st.session_state["persist"].get("prosjekt_navn", "Eiendomsprosjekt")
+)
+
+def _current_profile_payload() -> dict:
+    # Pakk sammen “gjeldende prosjekt” til en dict
+    return {
+        "prosjekt_navn": st.session_state["persist"].get("prosjekt_navn", profile_name),
+        "finn_url":      st.session_state["persist"].get("finn_url", ""),
+        "note":          st.session_state["persist"].get("note", ""),
+        "kjøpesum":      int(kjøpesum),
+        "leie":          int(leie),
+        "dokumentavgift": int(kjøpesum * 0.025),
+        "oppussing":     {k: int(st.session_state["persist"].get("opp", {}).get(k, v)) for k, v in oppussing_defaults.items()},
+        "drift":         {k: int(st.session_state["persist"].get("drift", {}).get(k, v)) for k, v in driftskostnader_defaults.items()},
+        # Lån
+        "egenkapital":   int(st.session_state["egenkapital"]),
+        "rente":         float(st.session_state["rente"]),
+        "løpetid":       int(st.session_state["løpetid"]),
+        "avdragsfri":    int(st.session_state["avdragsfri"]),
+        "lånetype":      st.session_state["lånetype"],
+        "eierform":      st.session_state["eierform"],
+    }
+
+# Lagre
+if st.sidebar.button("💾 Lagre profil"):
+    name = profile_name.strip() or "Uten navn"
+    st.session_state["profiles"][name] = _current_profile_payload()
+    _save_profiles(st.session_state["profiles"])
+    st.sidebar.success(f"Lagret: {name}")
+
+# Velg eksisterende profil
+existing = ["(Velg)"] + sorted(st.session_state["profiles"].keys())
+sel = st.sidebar.selectbox("Åpne / Slett profil", options=existing, index=0)
+
+# Last valgt profil (putter verdiene inn i appen og persist)
+if sel != "(Velg)" and st.sidebar.button("📂 Last profil"):
+    p = st.session_state["profiles"][sel]
+
+    # Grunnfelter
+    st.session_state["persist"]["prosjekt_navn"] = p.get("prosjekt_navn", sel)
+    st.session_state["persist"]["finn_url"] = p.get("finn_url", "")
+    st.session_state["persist"]["note"] = p.get("note", "")
+
+    # Kjøpesum/leie
+    st.session_state["persist"]["kjøpesum"] = p.get("kjøpesum", 0)
+    st.session_state["persist"]["leie"] = p.get("leie", 0)
+
+    # Oppussing/drift
+    st.session_state["persist"]["opp"] = p.get("oppussing", {})
+    st.session_state["persist"]["drift"] = p.get("drift", {})
+
+    # Lån
+    st.session_state["egenkapital"] = p.get("egenkapital", st.session_state["egenkapital"])
+    st.session_state["rente"]       = p.get("rente", st.session_state["rente"])
+    st.session_state["løpetid"]     = p.get("løpetid", st.session_state["løpetid"])
+    st.session_state["avdragsfri"]  = p.get("avdragsfri", st.session_state["avdragsfri"])
+    st.session_state["lånetype"]    = p.get("lånetype", st.session_state["lånetype"])
+    st.session_state["eierform"]    = p.get("eierform", st.session_state["eierform"])
+
+    # Tving nye widget-keys (så feltene “tar inn” nye verdier)
+    st.session_state["opp_ns"]   = st.session_state.get("opp_ns", 0) + 1
+    st.session_state["drift_ns"] = st.session_state.get("drift_ns", 0) + 1
+
+    # Autosave for å huske øyeblikkelig
+    _save_profiles(st.session_state["profiles"])
+    st.experimental_rerun()
+
+# Slett valgt profil
+if sel != "(Velg)" and st.sidebar.button("🗑️ Slett profil"):
+    st.session_state["profiles"].pop(sel, None)
+    _save_profiles(st.session_state["profiles"])
+    st.sidebar.warning(f"Slettet: {sel}")
+
 # === HOVEDINNHOLD (resultater til høyre) ===
 st.markdown("---")
 col1, col2 = st.columns([1, 1.4])
