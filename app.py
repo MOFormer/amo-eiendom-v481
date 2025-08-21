@@ -3,7 +3,6 @@ import pandas as pd
 import json
 from pathlib import Path
 import base64
-from io import BytesIO
 
 # =========================
 #   Persist / Autosave
@@ -48,10 +47,12 @@ st.title("AMO Eiendomskalkulator")
 #   Helpers
 # =========================
 def _img_bytes_to_b64(img_bytes: bytes) -> str:
-    return base64.b64encode(img_bytes).decode("utf-8")
+    import base64 as _b64
+    return _b64.b64encode(img_bytes).decode("utf-8")
 
 def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift_mnd, eierform):
     """Returnerer df med månedsrader + akkumulert netto cashflow."""
+    import pandas as _pd
     n  = int(løpetid * 12)
     af = int(avdragsfri * 12)
     r  = float(rente) / 100 / 12
@@ -89,7 +90,7 @@ def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift_mnd, e
         netto_cf.append(netto)
         akk_cf.append(akk)
 
-    return pd.DataFrame({
+    return _pd.DataFrame({
         "Måned": list(range(1, n + 1)),
         "Restgjeld": restgjeld,
         "Avdrag": avdrag,
@@ -101,20 +102,68 @@ def beregn_lån(lån, rente, løpetid, avdragsfri, lånetype, leie, drift_mnd, e
 def _first_month_kpis(df: pd.DataFrame) -> dict:
     if df.empty:
         return {"termin": 0.0, "netto": 0.0}
-    # Termin = Renter + Avdrag første mnd etter AF
     r = df.iloc[0]
     return {"termin": float(r["Renter"] + r["Avdrag"]), "netto": float(r["Netto cashflow"])}
 
-def _break_even_month(df: pd.DataFrame) -> int | None:
-    pos = (df["Akk. cashflow"] >= 0).idxmax() if (df["Akk. cashflow"] >= 0).any() else None
-    if pos is None:
+def _break_even_month(df: pd.DataFrame):
+    if df.empty:
         return None
-    # idxmax gir index, konverter til måned (kolonnen "Måned")
-    return int(df.iloc[pos]["Måned"])
+    mask = df["Akk. cashflow"] >= 0
+    if not mask.any():
+        return None
+    idx = mask.idxmax()
+    return int(df.iloc[idx]["Måned"])
 
-# ================
-#   Pending LOAD
-# ================
+def _skattefradrag_estimat(df: pd.DataFrame, drift_mnd_total: int) -> dict:
+    """Forenklet: Renter år 1 + driftskostnader år = fradrag (estimat)."""
+    renter_aar1 = float(df["Renter"].head(12).sum()) if not df.empty else 0.0
+    drift_aar = float(drift_mnd_total) * 12.0
+    fradrag_sum = renter_aar1 + drift_aar
+    return {"renter_aar1": renter_aar1, "drift_aar": drift_aar, "fradrag_aar1_sum": fradrag_sum}
+
+def _verdistigning_liste(startverdi: float, antall_ar: int, rate: float = 0.025) -> list[dict]:
+    """Returnerer liste med {'År': i, 'Verdi': verdi} for år 0..N."""
+    out = []
+    verdi = float(startverdi)
+    out.append({"År": 0, "Verdi": round(verdi)})
+    for i in range(1, antall_ar + 1):
+        verdi *= (1.0 + rate)
+        out.append({"År": i, "Verdi": round(verdi)})
+    return out
+
+# ---- NYTT: Rom-normalisering (fikser 'soverom' → 'rom') ----
+def _migrate_soverom_keys():
+    """Hvis gamle nøkler 'soverom_i' finnes og 'rom_i' ikke finnes,
+    kopierer vi verdiene over til 'rom_i' for bakoverkompatibilitet."""
+    rooms = st.session_state["persist"].setdefault("rooms_leie", {})
+    has_rom = any(k.startswith("rom_") for k in rooms)
+    has_soverom = any(k.startswith("soverom_") for k in rooms)
+    if not has_rom and has_soverom:
+        for k, v in list(rooms.items()):
+            if k.startswith("soverom_"):
+                try:
+                    idx = int(k.split("_")[1])
+                    rooms[f"rom_{idx}"] = int(v)
+                except Exception:
+                    pass
+        mark_dirty()
+
+def _normalized_room_pairs(rooms_dict: dict, antall_rom: int) -> list[tuple[int, int]]:
+    """Returnerer [(1, beløp1), (2, beløp2), ...] uavhengig av om nøkler heter rom_i eller soverom_i."""
+    out = []
+    for i in range(1, int(antall_rom) + 1):
+        v = None
+        for key in (f"rom_{i}", f"soverom_{i}", f"room_{i}"):
+            if key in rooms_dict:
+                try:
+                    v = int(rooms_dict[key])
+                except Exception:
+                    v = 0
+                break
+        out.append((i, v if v is not None else 0))
+    return out
+
+# ================ Pending LOAD ================
 if st.session_state["pending_profile_name"]:
     sel = st.session_state["pending_profile_name"]
     p = st.session_state["profiles"].get(sel, {})
@@ -153,9 +202,7 @@ if st.session_state["pending_profile_name"]:
     st.session_state["pending_profile_name"] = ""
     st.rerun()
 
-# =========================
-#   Sidebar – Grunninfo
-# =========================
+# ========================= Sidebar: Grunninfo =========================
 st.sidebar.header("🧾 Eiendomsinfo")
 
 proj_navn = st.sidebar.text_input(
@@ -206,9 +253,7 @@ if uploaded_cover is not None:
 else:
     cover_b64 = st.session_state["persist"].get("cover_b64", "")
 
-# =========================
-#   Kjøp & Inntekter
-# =========================
+# ========================= Kjøp & Inntekter =========================
 kjøpesum = st.sidebar.number_input(
     "Kjøpesum (kr)",
     value=int(st.session_state["persist"].get("kjøpesum", 4_000_000)),
@@ -218,10 +263,7 @@ kjøpesum = st.sidebar.number_input(
 st.session_state["persist"]["kjøpesum"] = int(kjøpesum)
 dokumentavgift = int(kjøpesum * 0.025)
 
-# =========================
-#   Expanders (Rom, Drift, Oppussing, Lån)
-# =========================
-
+# ========================= Expanders =========================
 # --- ROM & LEIE PR. ROM ---
 with st.sidebar.expander("🏠 Rom & leie pr. rom", expanded=False):
     antall_rom = st.number_input(
@@ -234,8 +276,12 @@ with st.sidebar.expander("🏠 Rom & leie pr. rom", expanded=False):
     )
     st.session_state["persist"]["antall_rom"] = int(antall_rom)
 
+    # migrer ev. gamle 'soverom_*' til 'rom_*'
+    _migrate_soverom_keys()
+
     rooms_key = "rooms_leie"
     st.session_state["persist"].setdefault(rooms_key, {})
+    # vis og lagre 'rom_i' i UI
     sum_rom = 0
     for i in range(int(antall_rom)):
         rk = f"rom_{i+1}"
@@ -313,7 +359,7 @@ with st.sidebar.expander("💡 Driftskostnader (per måned)", expanded=False):
         "internett": 0,
         "forsikring": 0,
         "vedlikehold": 0,
-        "husleie (kostnad)": 0,  # etter ønske
+        "husleie (kostnad)": 0,
     }
     st.session_state["persist"].setdefault("drift_mnd", driftskostnader_defaults.copy())
 
@@ -368,9 +414,7 @@ with st.sidebar.expander("🏦 Lån", expanded=False):
             st.session_state["persist"][k] = st.session_state[k]
             mark_dirty()
 
-# =========================
-#   Beregninger
-# =========================
+# ========================= Beregninger =========================
 total_investering = int(kjøpesum + dokumentavgift + oppussing_total)
 lånebeløp = max(total_investering - int(st.session_state["egenkapital"]), 0)
 st.session_state["lån"] = lånebeløp
@@ -388,10 +432,14 @@ df, _akk = beregn_lån(
 
 kpis_1 = _first_month_kpis(df)
 breakeven_mnd = _break_even_month(df)
+skatt = _skattefradrag_estimat(df, drift_mnd_total)
 
-# =========================
-#   Profiler (lagre/last/slett)
-# =========================
+# Verdistigning
+startverdi = float(kjøpesum + oppussing_total)
+verdistigning = _verdistigning_liste(startverdi, int(st.session_state["løpetid"]), rate=0.025)
+verdi_df = pd.DataFrame(verdistigning)
+
+# ========================= Profiler =========================
 st.sidebar.markdown("---")
 st.sidebar.subheader("📁 Profiler")
 
@@ -408,16 +456,13 @@ def _current_profile_payload() -> dict:
         "note":          st.session_state["persist"].get("note", ""),
         "cover_url":     st.session_state["persist"].get("cover_url", ""),
         "cover_b64":     st.session_state["persist"].get("cover_b64", ""),
-        # kjøp/inntekter
         "kjøpesum":      int(kjøpesum),
         "leie":          int(st.session_state["persist"].get("leie", 0)),
         "use_rooms_total": bool(st.session_state["persist"].get("use_rooms_total", False)),
         "rooms_leie":    st.session_state["persist"].get("rooms_leie", {}),
         "antall_rom":    int(st.session_state["persist"].get("antall_rom", 0)),
-        # kostnader
         "oppussing":     st.session_state["persist"].get("opp", {}),
         "drift_mnd":     st.session_state["persist"].get("drift_mnd", {}),
-        # lån
         "egenkapital":   int(st.session_state["egenkapital"]),
         "rente":         float(st.session_state["rente"]),
         "løpetid":       int(st.session_state["løpetid"]),
@@ -450,9 +495,7 @@ if sel != "(Velg)":
     st.sidebar.button("📂 Last profil", key="btn_load_profile", on_click=_queue_load_profile, args=(sel,))
     st.sidebar.button("🗑️ Slett profil", key="btn_delete_profile", on_click=_delete_selected, args=(sel,))
 
-# =========================
-#   Hovedinnhold (høyre)
-# =========================
+# ========================= Hovedinnhold =========================
 st.markdown("---")
 col1, col2 = st.columns([1, 1.4])
 
@@ -468,8 +511,18 @@ with col1:
     st.metric("Netto 1. mnd (ca.)", f"{kpis_1['netto']:,.0f} kr")
     st.metric("Break-even måned", f"{breakeven_mnd if breakeven_mnd else '—'}")
 
+    st.subheader("Skattefradrag (estimat)")
+    st.write(
+        f"""
+- **Renteutgifter år 1:** {skatt['renter_aar1']:,.0f} kr  
+- **Driftskostnader pr. år:** {skatt['drift_aar']:,.0f} kr  
+- **Sum fradragsutgifter (år 1, forenklet):** **{skatt['fradrag_aar1_sum']:,.0f} kr**
+"""
+    )
+    st.caption("Forenklet oversikt. Vedlikehold er normalt fradragsberettiget, mens påkostning ikke er det.")
+
     st.subheader("Kontantstrøm (første 60 måneder)")
-    st.dataframe(df.head(60), use_container_width=True, height=480)
+    st.dataframe(df.head(60), use_container_width=True, height=420)
 
 with col2:
     st.subheader("Oppsummering")
@@ -483,19 +536,22 @@ with col2:
 """
     )
 
-    # Romtabell i UI (hvis valgt)
-    rooms = st.session_state["persist"].get("rooms_leie", {})
+    # Romtabell i UI (støtter gamle 'soverom_*' nøkler)
+    rooms_dict = st.session_state["persist"].get("rooms_leie", {})
     antall_rom_ui = int(st.session_state["persist"].get("antall_rom", 0))
     if antall_rom_ui > 0:
         st.subheader("Rom & leie pr. rom")
-        rows = [{"Rom": i+1, "Leie (kr/mnd)": int(rooms.get(f"rom_{i+1}", 0))} for i in range(antall_rom_ui)]
-        df_rooms = pd.DataFrame(rows)
-        df_rooms.loc["Sum"] = ["", df_rooms["Leie (kr/mnd)"].sum()]
-        st.table(df_rooms)
+        pairs = _normalized_room_pairs(rooms_dict, antall_rom_ui)  # [(i, beløp)]
+        rows = [{"Rom": idx, "Leie (kr/mnd)": beløp} for idx, beløp in pairs]
+        if rows:
+            df_rooms = pd.DataFrame(rows)
+            df_rooms.loc["Sum"] = ["", df_rooms["Leie (kr/mnd)"].sum()]
+            st.table(df_rooms)
 
-# =========================
-#   Presentasjon (HTML)
-# =========================
+    st.subheader("Verdiutvikling (2,5 % årlig)")
+    st.dataframe(verdi_df, use_container_width=True, height=360)
+
+# ========================= Presentasjon (HTML) =========================
 def lag_presentasjon_html(
     df: pd.DataFrame,
     prosjekt_navn: str,
@@ -515,20 +571,32 @@ def lag_presentasjon_html(
     lånetype: str = "Annuitetslån",
     eierform: str = "Privat",
     egenkapital: int = 0,
-    # NYE (for rom)
+    # Rom
     antall_rom: int = 0,
-    rom_renter: dict | None = None,  # f.eks {"rom_1": 7000, ...}
+    rom_renter: dict | None = None,
+    # Skatt og verdi
+    skatt: dict | None = None,
+    verdi_tabell: list[dict] | None = None,
 ) -> bytes:
     def _safe(s: str) -> str:
         return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-    # FINN-knapp
-    finn_html = (
-        f'<a href="{finn_url}" target="_blank" class="btn">🔗 Åpne FINN-annonsen</a>'
-        if finn_url else ""
-    )
+    # Klikkbar lenke + rå-URL fallback
+    finn_html = ""
+    if finn_url:
+        safe_url = _safe(finn_url)
+        finn_html = f'''
+          <p>
+            <a href="{safe_url}" target="_blank" rel="noopener noreferrer" class="btn" style="pointer-events:auto; cursor:pointer;">
+              🔗 Åpne FINN-annonsen
+            </a>
+          </p>
+          <p class="muted" style="margin-top:-6px;">
+            Direkte lenke: <span style="text-decoration:underline; color:#0b63ce;">{safe_url}</span>
+          </p>
+        '''
 
-    # Forsidebilde – litt mindre skalering
+    # Forsidebilde
     cover_html = ""
     if cover_b64:
         cover_html = f'''
@@ -538,19 +606,20 @@ def lag_presentasjon_html(
     elif cover_url:
         cover_html = f'''
           <div class="hero-img">
-            <img src="{cover_url}" alt="Forsidebilde" />
+            <img src="{_safe(cover_url)}" alt="Forsidebilde" />
           </div>'''
 
-    # Rom-detaljer
-    rom_sum = sum((rom_renter or {}).values()) if rom_renter else 0
-    leie_kilde = "Sum av rom" if rom_renter and rom_sum == leie else "Manuelt totalt"
+    # Rom-detaljer (alltid "Rom X")
+    pairs = _normalized_room_pairs(rom_renter or {}, antall_rom)  # [(i, beløp)]
+    rom_sum = sum(b for _, b in pairs)
+    leie_kilde = "Sum av rom" if rom_sum == leie and antall_rom > 0 else "Manuelt totalt"
     snitt_pr_rom = int(leie / antall_rom) if antall_rom > 0 else 0
 
     # KPI-er
     brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0
     netto_yield  = ((leie * 12 - drift_mnd * 12) / total_investering) * 100 if total_investering else 0
 
-    # Kontantstrømstabell (første 24 mnd)
+    # Kontantstrøm (første 24 mnd)
     vis_mnd = min(24, len(df))
     cash_rows = []
     for i in range(vis_mnd):
@@ -570,10 +639,11 @@ def lag_presentasjon_html(
     # Oppussingstabell
     opp_rows = ""
     if oppussing_total:
+        opp_dict = st.session_state['persist'].get('opp', {}) or {}
         opp_rows = (
             "<table class='tight'><thead><tr><th>Tiltak</th><th>Beløp</th></tr></thead><tbody>"
-            + "".join(f"<tr><td>{_safe(k.capitalize())}</td><td>{v:,.0f} kr</td></tr>"
-                      for k, v in (st.session_state['persist'].get('opp', {}) or {}).items())
+            + "".join(f"<tr><td>{_safe(k.capitalize())}</td><td>{int(v):,} kr</td></tr>"
+                      for k, v in opp_dict.items())
             + f"<tr class='total'><td>Sum</td><td>{oppussing_total:,.0f} kr</td></tr>"
             + "</tbody></table>"
         )
@@ -590,16 +660,41 @@ def lag_presentasjon_html(
             + "</tbody></table>"
         )
 
-    # Rom-tabell (valgfritt)
+    # Rom-tabell (etikett alltid "Rom i")
     rom_table = ""
-    if antall_rom > 0 and rom_renter:
+    if antall_rom > 0:
         rom_table = (
             "<table class='tight'><thead><tr><th>Rom</th><th>Leie / mnd</th></tr></thead><tbody>"
-            + "".join(f"<tr><td>{_safe(k.replace('_',' ').title())}</td><td>{int(v):,} kr</td></tr>"
-                      for k, v in rom_renter.items())
-            + f"<tr class='total'><td>Sum</td><td>{sum(rom_renter.values()):,} kr</td></tr>"
+            + "".join(f"<tr><td>Rom {idx}</td><td>{int(b):,} kr</td></tr>" for idx, b in pairs)
+            + f"<tr class='total'><td>Sum</td><td>{rom_sum:,} kr</td></tr>"
             + "</tbody></table>"
         )
+
+    # Skattefradrag
+    skatt_html = ""
+    if skatt:
+        skatt_html = f"""
+        <table class="tight">
+          <thead><tr><th>Post</th><th>Beløp (kr)</th></tr></thead>
+          <tbody>
+            <tr><td>Renteutgifter år 1</td><td>{skatt['renter_aar1']:,.0f}</td></tr>
+            <tr><td>Driftskostnader pr. år</td><td>{skatt['drift_aar']:,.0f}</td></tr>
+            <tr class="total"><td>Sum fradragsutgifter (år 1, forenklet)</td><td>{skatt['fradrag_aar1_sum']:,.0f}</td></tr>
+          </tbody>
+        </table>
+        <p class="muted">Forenklet oversikt. Skatteregler kan variere (vedlikehold vs. påkostning m.m.).</p>
+        """
+
+    # Verdiutvikling
+    verdi_html = ""
+    if verdi_tabell:
+        rows = "".join(f"<tr><td>{int(r['År'])}</td><td>{int(r['Verdi']):,} kr</td></tr>" for r in verdi_tabell)
+        verdi_html = f"""
+        <table class="tight">
+          <thead><tr><th>År</th><th>Estimert verdi (2,5 % årlig)</th></tr></thead>
+          <tbody>{rows}</tbody>
+        </table>
+        """
 
     html = f"""
 <!DOCTYPE html>
@@ -609,8 +704,7 @@ def lag_presentasjon_html(
 <title>{_safe(prosjekt_navn)} – Presentasjon</title>
 <style>
   :root {{
-    --bg:#fafafa; --card:#ffffff; --text:#111; --muted:#666; --border:#eaeaea;
-    --brand:#0b63ce;
+    --bg:#fafafa; --card:#ffffff; --text:#111; --muted:#666; --border:#eaeaea; --brand:#0b63ce;
   }}
   * {{ box-sizing: border-box; }}
   body {{ margin: 24px; font-family: -apple-system, BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color: var(--text); background: var(--bg); }}
@@ -623,10 +717,9 @@ def lag_presentasjon_html(
   }}
   .hero {{ display:grid; grid-template-columns: 1fr auto; gap: 16px; align-items:center; }}
   .hero-img img {{
-    max-width: 420px; width: 100%;
+    max-width: 360px; width: 100%;
     border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.06);
   }}
-
   .kpi {{
     margin-top: 12px;
     display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px;
@@ -637,19 +730,18 @@ def lag_presentasjon_html(
   }}
   .kpi .card .label {{ font-size:12px; color:var(--muted); margin-bottom:6px; }}
   .kpi .card .value {{ font-size:16px; font-weight:700; }}
-
   .split {{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
   table {{ width:100%; border-collapse: collapse; font-size: 12px; }}
   td, th {{ padding: 6px 8px; border-bottom:1px solid var(--border); text-align:right; }}
   th:first-child, td:first-child {{ text-align:left; }}
   table.tight td, table.tight th {{ padding: 6px 6px; }}
   tr.total td {{ font-weight: 700; }}
-
   .badge {{
     display:inline-block; padding:4px 8px; border-radius:999px;
     background:#eef6ff; color: var(--brand); font-size:12px; font-weight:700;
   }}
   .spacer {{ height: 8px; }}
+  @media print {{ a[href]::after {{ content:" (" attr(href) ")"; font-size:11px; color:#555; }} }}
 </style>
 </head>
 <body>
@@ -674,7 +766,7 @@ def lag_presentasjon_html(
 
   <div class="card"><div class="label">Egenkapital</div><div class="value">{egenkapital:,.0f} kr</div></div>
   <div class="card"><div class="label">Rente</div><div class="value">{rente:.2f} %</div></div>
-  <div class="card"><div class="label">Yield (brutto / netto)</div><div class="value">{brutto_yield:.2f}% / {netto_yield:.2f}%</div></div>
+  <div class="card"><div class="label">Yield (brutto / netto)</div><div class="value">{(leie*12/total_investering*100 if total_investering else 0):.2f}% / {((leie*12 - drift_mnd*12)/total_investering*100 if total_investering else 0):.2f}%</div></div>
 
   <div class="card"><div class="label">Antall rom</div><div class="value">{antall_rom}</div></div>
   <div class="card"><div class="label">Snitt pr. rom</div><div class="value">{snitt_pr_rom:,.0f} kr</div></div>
@@ -690,7 +782,7 @@ def lag_presentasjon_html(
 <div class="split">
   <div class="card">
     <h2>Oppussing (engang)</h2>
-    {opp_rows if opp_rows else "<p class='muted'>Ingen oppførte oppussingskostnader.</p>"}
+    {opp_rows if opp_rows else "<p class='muted'>Ingen oppussingskostnader registrert.</p>"}
   </div>
   <div class="card">
     <h2>Drift (per måned)</h2>
@@ -703,6 +795,19 @@ def lag_presentasjon_html(
 <div class="card">
   <h2>Rom og leie</h2>
   {rom_table if rom_table else "<p class='muted'>Ingen rom spesifisert.</p>"}
+</div>
+
+<div class="spacer"></div>
+
+<div class="split">
+  <div class="card">
+    <h2>Skattefradrag (estimat)</h2>
+    {skatt_html if skatt_html else "<p class='muted'>Ingen beregning tilgjengelig.</p>"}
+  </div>
+  <div class="card">
+    <h2>Verdiutvikling (2,5 % årlig)</h2>
+    {verdi_html if verdi_html else "<p class='muted'>Ingen beregning tilgjengelig.</p>"}
+  </div>
 </div>
 
 <div class="spacer"></div>
@@ -746,9 +851,10 @@ rapport_bytes = lag_presentasjon_html(
     lånetype=st.session_state["lånetype"],
     eierform=st.session_state["eierform"],
     egenkapital=int(st.session_state["egenkapital"]),
-    # nye:
-    antall_rom=int(antall_rom),
+    antall_rom=int(st.session_state["persist"].get("antall_rom", 0)),
     rom_renter=st.session_state["persist"].get("rooms_leie", {}),
+    skatt=skatt,
+    verdi_tabell=verdistigning,
 )
 
 st.markdown("---")
@@ -760,11 +866,9 @@ st.download_button(
     mime="text/html",
     use_container_width=True,
 )
-st.caption("Tips: Åpne HTML → Print → Lagre som PDF.")
+st.caption("Åpne HTML-filen i nettleser → Skriv ut → Lagre som PDF. (Lenker og rå-URL bevares som klikkbare.)")
 
-# =========================
-#   Autosave persist
-# =========================
+# ========================= Autosave persist =========================
 if st.session_state["_dirty"]:
     _save_json(PERSIST_PATH, st.session_state["persist"])
     st.session_state["_dirty"] = False
