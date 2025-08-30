@@ -3,6 +3,7 @@ import pandas as pd
 import json
 from pathlib import Path
 import base64
+from io import BytesIO
 
 # =========================
 #   Persist / Autosave
@@ -123,7 +124,7 @@ def _skattefradrag_estimat(df: pd.DataFrame, drift_mnd_total: int) -> dict:
         "fradrag_aar1_sum": fradrag_sum
     }
 
-def _verdistigning_liste(startverdi: float, antall_ar: int, rate: float) -> list[dict]:
+def _verdistigning_liste(startverdi: float, antall_ar: int, rate: float = 0.025) -> list[dict]:
     """Returnerer liste med {'År': i, 'Verdi': verdi} for år 0..N."""
     out = []
     verdi = float(startverdi)
@@ -146,32 +147,16 @@ if st.session_state["pending_profile_name"]:
     if p.get("cover_b64"):
         st.session_state["persist"]["cover_b64"] = p.get("cover_b64", "")
 
-    # Rom
-    st.session_state["persist"]["antall_rom"] = p.get("antall_rom", 0)
-    st.session_state["persist"]["rooms_leie"] = p.get("rooms_leie", {})
-    st.session_state["persist"]["use_rooms_total"] = p.get("use_rooms_total", False)
-    st.session_state["persist"]["room_label"] = p.get("room_label", "rom")
-
     # Kjøp/inntekter
-    st.session_state["persist"]["kjøpesum"] = p.get("kjøpesum", 0)
-    st.session_state["persist"]["leie"]     = p.get("leie", 0)
+    st.session_state["persist"]["kjøpesum"]   = p.get("kjøpesum", 0)
+    st.session_state["persist"]["leie"]       = p.get("leie", 0)
+    st.session_state["persist"]["use_rooms_total"] = p.get("use_rooms_total", False)
+    st.session_state["persist"]["rooms_leie"] = p.get("rooms_leie", {})
+    st.session_state["persist"]["antall_rom"] = p.get("antall_rom", 0)
 
     # Kostnader
     st.session_state["persist"]["opp"]       = p.get("oppussing", {})
     st.session_state["persist"]["drift_mnd"] = p.get("drift_mnd", {})
-
-    # Forutsetninger
-    st.session_state["persist"]["ledighet_pct"] = p.get("ledighet_pct", 0.0)
-    st.session_state["persist"]["mgmt_pct"]     = p.get("mgmt_pct", 0.0)
-    st.session_state["persist"]["leievekst_pct"] = p.get("leievekst_pct", 0.0)
-    st.session_state["persist"]["kostvekst_pct"] = p.get("kostvekst_pct", 0.0)
-    st.session_state["persist"]["verdi_pct"]     = p.get("verdi_pct", 2.5)
-
-    # Refi
-    st.session_state["persist"]["refi_on"]      = p.get("refi_on", False)
-    st.session_state["persist"]["ny_verdi"]     = p.get("ny_verdi", 0)
-    st.session_state["persist"]["refi_ltv"]     = p.get("refi_ltv", 75.0)
-    st.session_state["persist"]["refi_kost_pct"]= p.get("refi_kost_pct", 1.0)
 
     # Lån
     st.session_state["egenkapital"] = p.get("egenkapital", 300000)
@@ -233,9 +218,11 @@ st.session_state["persist"]["cover_url"] = cover_url
 
 uploaded_cover = st.sidebar.file_uploader("…eller last opp JPG/PNG", type=["jpg", "jpeg", "png"])
 if uploaded_cover is not None:
-    st.session_state["persist"]["cover_b64"] = _img_bytes_to_b64(uploaded_cover.read())
+    cover_b64 = _img_bytes_to_b64(uploaded_cover.read())
+    st.session_state["persist"]["cover_b64"] = cover_b64
     mark_dirty()
-cover_b64 = st.session_state["persist"].get("cover_b64", "")
+else:
+    cover_b64 = st.session_state["persist"].get("cover_b64", "")
 
 # ========================= Kjøp & Inntekter =========================
 kjøpesum = st.sidebar.number_input(
@@ -260,20 +247,13 @@ with st.sidebar.expander("🏠 Rom & leie pr. rom", expanded=False):
     )
     st.session_state["persist"]["antall_rom"] = int(antall_rom)
 
-    room_label = st.text_input(
-        "Rom-type (visningstekst)",
-        value=st.session_state["persist"].get("room_label", "rom"),
-        help="Eksempler: rom, soverom, hybler, kontorplasser …"
-    )
-    st.session_state["persist"]["room_label"] = (room_label.strip() or "rom")
-
     rooms_key = "rooms_leie"
     st.session_state["persist"].setdefault(rooms_key, {})
     sum_rom = 0
     for i in range(int(antall_rom)):
         rk = f"rom_{i+1}"
         default_val = int(st.session_state["persist"][rooms_key].get(rk, 0))
-        val = st.number_input(f"{st.session_state['persist']['room_label'].capitalize()} {i+1} (kr/mnd)", min_value=0, step=500, value=default_val, key=f"room_input_{i+1}")
+        val = st.number_input(f"Rom {i+1} (kr/mnd)", min_value=0, step=500, value=default_val, key=f"room_input_{i+1}")
         if st.session_state["persist"][rooms_key].get(rk) != int(val):
             st.session_state["persist"][rooms_key][rk] = int(val)
             mark_dirty()
@@ -295,8 +275,8 @@ with st.sidebar.expander("🏠 Rom & leie pr. rom", expanded=False):
     )
     st.session_state["persist"]["leie"] = int(leie_input)
 
-# Leie som brukes videre (brutto før ledighet/forvaltning)
-brutto_leie_mnd = int(sum_rom) if st.session_state["persist"].get("use_rooms_total", False) else int(st.session_state["persist"].get("leie", 0))
+# Leie som brukes i videre beregning
+leie = int(sum_rom) if st.session_state["persist"].get("use_rooms_total", False) else int(st.session_state["persist"].get("leie", 0))
 
 # --- OPPUSSING ---
 with st.sidebar.expander("🔨 Oppussing", expanded=False):
@@ -375,29 +355,6 @@ with st.sidebar.expander("💡 Driftskostnader (per måned)", expanded=False):
         drift_mnd_total += val
     st.caption(f"**Sum drift / mnd:** {drift_mnd_total:,} kr")
 
-# --- FORUTSETNINGER (ledighet, forvaltning, vekst) ---
-with st.sidebar.expander("📈 Forutsetninger (ledighet, forvaltning, vekst)", expanded=False):
-    ledighet_pct = st.number_input("Ledighetsrate (%)", min_value=0.0, max_value=100.0,
-                                   value=float(st.session_state["persist"].get("ledighet_pct", 0.0)),
-                                   step=0.5)
-    mgmt_pct = st.number_input("Forvaltning/adm. (%) av brutto leie", min_value=0.0, max_value=50.0,
-                               value=float(st.session_state["persist"].get("mgmt_pct", 0.0)),
-                               step=0.5)
-    leievekst_pct = st.number_input("Årlig leievekst (%)", min_value=0.0, max_value=20.0,
-                                    value=float(st.session_state["persist"].get("leievekst_pct", 0.0)),
-                                    step=0.5)
-    kostvekst_pct = st.number_input("Årlig kostnadsvekst (%)", min_value=0.0, max_value=20.0,
-                                    value=float(st.session_state["persist"].get("kostvekst_pct", 0.0)),
-                                    step=0.5)
-    verdi_pct = st.number_input("Årlig verdistigning (%)", min_value=0.0, max_value=20.0,
-                                value=float(st.session_state["persist"].get("verdi_pct", 2.5)),
-                                step=0.1)
-    st.session_state["persist"]["ledighet_pct"] = ledighet_pct
-    st.session_state["persist"]["mgmt_pct"] = mgmt_pct
-    st.session_state["persist"]["leievekst_pct"] = leievekst_pct
-    st.session_state["persist"]["kostvekst_pct"] = kostvekst_pct
-    st.session_state["persist"]["verdi_pct"] = verdi_pct
-
 # --- LÅN ---
 with st.sidebar.expander("🏦 Lån", expanded=False):
     lån_defaults = {
@@ -424,36 +381,10 @@ with st.sidebar.expander("🏦 Lån", expanded=False):
             st.session_state["persist"][k] = st.session_state[k]
             mark_dirty()
 
-# --- RE-FINANSIERING ---
-with st.sidebar.expander("♻️ Re-finansiering (etter oppussing)", expanded=False):
-    refi_on = st.checkbox("Beregn potensiell re-finansiering", value=bool(st.session_state["persist"].get("refi_on", False)))
-    st.session_state["persist"]["refi_on"] = refi_on
-    cashout_netto = 0.0
-    if refi_on:
-        ny_verdi = st.number_input("Ny verdi etter oppussing (kr)", value=int(st.session_state["persist"].get("ny_verdi", kjøpesum + oppussing_total)), step=100_000)
-        target_ltv = st.number_input("Maks LTV (%)", min_value=0.0, max_value=100.0, value=float(st.session_state["persist"].get("refi_ltv", 75.0)), step=0.5)
-        refi_kost_pct = st.number_input("Refi-kostnader (%)", min_value=0.0, max_value=5.0, value=float(st.session_state["persist"].get("refi_kost_pct", 1.0)), step=0.1)
-        st.session_state["persist"]["ny_verdi"] = int(ny_verdi)
-        st.session_state["persist"]["refi_ltv"] = float(target_ltv)
-        st.session_state["persist"]["refi_kost_pct"] = float(refi_kost_pct)
-        mulig_lan = ny_verdi * (target_ltv/100.0)
-        dagens_lan = float(max(kjøpesum + dokumentavgift + oppussing_total - int(st.session_state["egenkapital"]), 0))
-        cashout_brutto = max(0.0, mulig_lan - dagens_lan)
-        refi_kost = cashout_brutto * (refi_kost_pct/100.0)
-        cashout_netto = max(0.0, cashout_brutto - refi_kost)
-        st.caption(f"Mulig nytt lån: {mulig_lan:,.0f} kr  |  Anslått cash-out netto: {cashout_netto:,.0f} kr")
-
 # ========================= Beregninger =========================
 total_investering = int(kjøpesum + dokumentavgift + oppussing_total)
 lånebeløp = max(total_investering - int(st.session_state["egenkapital"]), 0)
 st.session_state["lån"] = lånebeløp
-
-# Effektiv leie etter ledighet/forvaltning
-ledighet = st.session_state["persist"].get("ledighet_pct", 0.0) / 100.0
-mgmt = st.session_state["persist"].get("mgmt_pct", 0.0) / 100.0
-forvaltning_kost = brutto_leie_mnd * mgmt
-eff_leie_mnd = brutto_leie_mnd * (1 - ledighet) - forvaltning_kost
-eff_leie_mnd = max(0, int(round(eff_leie_mnd)))
 
 df, _akk = beregn_lån(
     lån=int(st.session_state["lån"]),
@@ -461,7 +392,7 @@ df, _akk = beregn_lån(
     løpetid=int(st.session_state["løpetid"]),
     avdragsfri=int(st.session_state["avdragsfri"]),
     lånetype=st.session_state["lånetype"],
-    leie=int(eff_leie_mnd),
+    leie=int(leie),
     drift_mnd=int(drift_mnd_total),
     eierform=st.session_state["eierform"]
 )
@@ -471,23 +402,9 @@ breakeven_mnd = _break_even_month(df)
 skatt = _skattefradrag_estimat(df, drift_mnd_total)
 
 # Verdistigning (startverdi = kjøpesum + oppussing)
-verdi_rate = float(st.session_state["persist"].get("verdi_pct", 2.5)) / 100.0
 startverdi = float(kjøpesum + oppussing_total)
-verdistigning = _verdistigning_liste(startverdi, int(st.session_state["løpetid"]), rate=verdi_rate)
+verdistigning = _verdistigning_liste(startverdi, int(st.session_state["løpetid"]), rate=0.025)
 verdi_df = pd.DataFrame(verdistigning)
-
-# Årlig brutto/drift/netto (før finans) med vekst
-years = int(st.session_state["løpetid"])
-annual_rows = []
-gross = float(brutto_leie_mnd) * 12.0
-opex  = float(drift_mnd_total) * 12.0
-lv = float(st.session_state["persist"].get("leievekst_pct", 0.0)) / 100.0
-kv = float(st.session_state["persist"].get("kostvekst_pct", 0.0)) / 100.0
-for y in range(0, years+1):
-    annual_rows.append({"År": y, "Brutto leie": round(gross), "Drift": round(opex), "Netto (før finans)": round(gross - opex)})
-    gross *= (1 + lv)
-    opex  *= (1 + kv)
-annual_df = pd.DataFrame(annual_rows)
 
 # ========================= Profiler =========================
 st.sidebar.markdown("---")
@@ -506,34 +423,15 @@ def _current_profile_payload() -> dict:
         "note":          st.session_state["persist"].get("note", ""),
         "cover_url":     st.session_state["persist"].get("cover_url", ""),
         "cover_b64":     st.session_state["persist"].get("cover_b64", ""),
-
-        # Rom
-        "antall_rom":    int(st.session_state["persist"].get("antall_rom", 0)),
-        "room_label":    st.session_state["persist"].get("room_label", "rom"),
-        "rooms_leie":    st.session_state["persist"].get("rooms_leie", {}),
-        "use_rooms_total": bool(st.session_state["persist"].get("use_rooms_total", False)),
-
         # kjøp/inntekter
         "kjøpesum":      int(kjøpesum),
         "leie":          int(st.session_state["persist"].get("leie", 0)),
-
+        "use_rooms_total": bool(st.session_state["persist"].get("use_rooms_total", False)),
+        "rooms_leie":    st.session_state["persist"].get("rooms_leie", {}),
+        "antall_rom":    int(st.session_state["persist"].get("antall_rom", 0)),
         # kostnader
         "oppussing":     st.session_state["persist"].get("opp", {}),
         "drift_mnd":     st.session_state["persist"].get("drift_mnd", {}),
-
-        # forutsetninger
-        "ledighet_pct":  float(st.session_state["persist"].get("ledighet_pct", 0.0)),
-        "mgmt_pct":      float(st.session_state["persist"].get("mgmt_pct", 0.0)),
-        "leievekst_pct": float(st.session_state["persist"].get("leievekst_pct", 0.0)),
-        "kostvekst_pct": float(st.session_state["persist"].get("kostvekst_pct", 0.0)),
-        "verdi_pct":     float(st.session_state["persist"].get("verdi_pct", 2.5)),
-
-        # refi
-        "refi_on":       bool(st.session_state["persist"].get("refi_on", False)),
-        "ny_verdi":      int(st.session_state["persist"].get("ny_verdi", 0)),
-        "refi_ltv":      float(st.session_state["persist"].get("refi_ltv", 75.0)),
-        "refi_kost_pct": float(st.session_state["persist"].get("refi_kost_pct", 1.0)),
-
         # lån
         "egenkapital":   int(st.session_state["egenkapital"]),
         "rente":         float(st.session_state["rente"]),
@@ -573,20 +471,15 @@ col1, col2 = st.columns([1, 1.4])
 
 with col1:
     st.subheader("✨ Resultater")
-    brutto_yield = (brutto_leie_mnd * 12 / total_investering) * 100 if total_investering else 0
-    netto_yield = ((eff_leie_mnd * 12 - drift_mnd_total * 12) / total_investering) * 100 if total_investering else 0
-    lånegrad = (st.session_state["lån"] / total_investering * 100) if total_investering else 0
-
+    brutto_yield = (leie * 12 / total_investering) * 100 if total_investering else 0
+    netto_yield = ((leie * 12 - drift_mnd_total * 12) / total_investering) * 100 if total_investering else 0
     st.metric("Total investering", f"{int(total_investering):,} kr")
-    st.metric("Brutto yield (brutto leie)", f"{brutto_yield:.2f} %")
-    st.metric("Netto yield (eff. leie − drift)", f"{netto_yield:.2f} %")
-    st.metric("Lån (opprinnelig)", f"{int(st.session_state['lån']):,} kr")
-    st.metric("Lånegrad (LTV)", f"{lånegrad:.1f} %")
+    st.metric("Brutto yield", f"{brutto_yield:.2f} %")
+    st.metric("Netto yield", f"{netto_yield:.2f} %")
+    st.metric("Lån", f"{int(st.session_state['lån']):,} kr")
     st.metric("Termin 1. mnd (ca.)", f"{kpis_1['termin']:,.0f} kr")
     st.metric("Netto 1. mnd (ca.)", f"{kpis_1['netto']:,.0f} kr")
     st.metric("Break-even måned", f"{breakeven_mnd if breakeven_mnd else '—'}")
-    if st.session_state["persist"].get("refi_on", False):
-        st.metric("Anslått cash-out (netto)", f"{cashout_netto:,.0f} kr")
 
     st.subheader("Skattefradrag (estimat)")
     st.write(
@@ -603,12 +496,9 @@ with col1:
 
 with col2:
     st.subheader("Oppsummering")
-    lbl = st.session_state["persist"].get("room_label","rom")
     st.write(
         f"""
-- **Brutto leie (oppgitt):** {brutto_leie_mnd:,.0f} kr/mnd  
-- **Ledighet:** {ledighet*100:.1f} %  |  **Forvaltning:** {mgmt*100:.1f} %  
-- **Effektiv leie (i beregning):** {eff_leie_mnd:,.0f} kr/mnd  
+- **Leie som brukes:** {leie:,.0f} kr/mnd  
 - **Driftskostnader:** {drift_mnd_total:,.0f} kr/mnd  
 - **Avdragsfri:** {int(st.session_state['avdragsfri'])} år  
 - **Løpetid:** {int(st.session_state['løpetid'])} år ({st.session_state['lånetype']})  
@@ -620,20 +510,17 @@ with col2:
     rooms = st.session_state["persist"].get("rooms_leie", {})
     antall_rom_ui = int(st.session_state["persist"].get("antall_rom", 0))
     if antall_rom_ui > 0:
-        st.subheader(f"{lbl.capitalize()} & leie pr. {lbl}")
-        rows = [{"#": i+1, f"Leie (kr/mnd) pr. {lbl}": int(rooms.get(f"rom_{i+1}", 0))} for i in range(antall_rom_ui)]
+        st.subheader("Rom & leie pr. rom")
+        rows = [{"Rom": i+1, "Leie (kr/mnd)": int(rooms.get(f"rom_{i+1}", 0))} for i in range(antall_rom_ui)]
         if rows:
             df_rooms = pd.DataFrame(rows)
-            df_rooms.loc["Sum"] = ["", df_rooms.iloc[:-1, 1].astype(int).sum()]
+            df_rooms.loc["Sum"] = ["", df_rooms["Leie (kr/mnd)"].sum()]
             st.table(df_rooms)
 
-    st.subheader(f"Verdiutvikling ({st.session_state['persist'].get('verdi_pct', 2.5):.1f} % årlig)")
-    st.dataframe(verdi_df, use_container_width=True, height=240)
+    st.subheader("Verdiutvikling (2,5 % årlig)")
+    st.dataframe(verdi_df, use_container_width=True, height=360)
 
-    st.subheader("Årlig drift (før finans)")
-    st.dataframe(annual_df, use_container_width=True, height=240)
-
-# ========================= Presentasjon (HTML) =========================
+# ========================= Presentasjon (HTML – detalj) =========================
 def lag_presentasjon_html(
     df: pd.DataFrame,
     prosjekt_navn: str,
@@ -646,10 +533,7 @@ def lag_presentasjon_html(
     oppussing_total: int = 0,
     drift_mnd: int = 0,
     total_investering: int = 0,
-    brutto_leie_mnd: int = 0,
-    eff_leie_mnd: int = 0,
-    ledighet_pct: float = 0.0,
-    mgmt_pct: float = 0.0,
+    leie: int = 0,
     rente: float = 0.0,
     løpetid: int = 0,
     avdragsfri: int = 0,
@@ -659,17 +543,14 @@ def lag_presentasjon_html(
     # Rom
     antall_rom: int = 0,
     rom_renter: dict | None = None,
-    room_label: str = "rom",
     # Skatt og verdi
     skatt: dict | None = None,
     verdi_tabell: list[dict] | None = None,
-    # Årlig drift
-    annual_rows: list[dict] | None = None,
 ) -> bytes:
     def _safe(s: str) -> str:
         return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-    # Klikkbar lenke + rå-URL fallback (PDF)
+    # Klikkbar lenke + rå-URL fallback (for PDF-lesere som autolinker ren tekst)
     finn_html = ""
     if finn_url:
         safe_url = _safe(finn_url)
@@ -684,7 +565,7 @@ def lag_presentasjon_html(
           </p>
         '''
 
-    # Forsidebilde
+    # Forsidebilde – litt mindre
     cover_html = ""
     if cover_b64:
         cover_html = f'''
@@ -699,12 +580,8 @@ def lag_presentasjon_html(
 
     # Rom-detaljer
     rom_sum = sum((rom_renter or {}).values()) if rom_renter else 0
-    leie_kilde = "Sum av rom" if rom_renter and rom_sum == brutto_leie_mnd else "Manuelt totalt"
-    snitt_pr_rom = int(brutto_leie_mnd / antall_rom) if antall_rom > 0 else 0
-
-    # KPI-er
-    brutto_yield = (brutto_leie_mnd * 12 / total_investering) * 100 if total_investering else 0
-    netto_yield  = ((eff_leie_mnd * 12 - drift_mnd * 12) / total_investering) * 100 if total_investering else 0
+    leie_kilde = "Sum av rom" if rom_renter and rom_sum == leie else "Manuelt totalt"
+    snitt_pr_rom = int(leie / antall_rom) if antall_rom > 0 else 0
 
     # Kontantstrømstabell (første 24 mnd)
     vis_mnd = min(24, len(df))
@@ -750,12 +627,10 @@ def lag_presentasjon_html(
     # Rom-tabell
     rom_table = ""
     if antall_rom > 0 and rom_renter:
-        # vis Rom 1, Rom 2 ... med valgt label
-        pairs = sorted(rom_renter.items(), key=lambda kv: int(kv[0].split("_")[1]))  # rom_1, rom_2 ...
         rom_table = (
-            f"<table class='tight'><thead><tr><th>{_safe(room_label.capitalize())}</th><th>Leie / mnd</th></tr></thead><tbody>"
-            + "".join(f"<tr><td>{_safe(room_label.capitalize())} {idx+1}</td><td>{int(v):,} kr</td></tr>"
-                      for idx, (_, v) in enumerate(pairs))
+            "<table class='tight'><thead><tr><th>Rom</th><th>Leie / mnd</th></tr></thead><tbody>"
+            + "".join(f"<tr><td>{_safe(k.replace('_',' ').title())}</td><td>{int(v):,} kr</td></tr>"
+                      for k, v in rom_renter.items())
             + f"<tr class='total'><td>Sum</td><td>{sum(rom_renter.values()):,} kr</td></tr>"
             + "</tbody></table>"
         )
@@ -784,21 +659,7 @@ def lag_presentasjon_html(
         )
         verdi_html = f"""
         <table class="tight">
-          <thead><tr><th>År</th><th>Estimert verdi</th></tr></thead>
-          <tbody>{rows}</tbody>
-        </table>
-        """
-
-    # Årlig drift
-    annual_html = ""
-    if annual_rows:
-        rows = "".join(
-            f"<tr><td>{int(r['År'])}</td><td>{int(r['Brutto leie']):,} kr</td><td>{int(r['Drift']):,} kr</td><td>{int(r['Netto (før finans)']):,} kr</td></tr>"
-            for r in annual_rows
-        )
-        annual_html = f"""
-        <table class="tight">
-          <thead><tr><th>År</th><th>Brutto leie</th><th>Drift</th><th>Netto (før finans)</th></tr></thead>
+          <thead><tr><th>År</th><th>Estimert verdi (2,5 % årlig)</th></tr></thead>
           <tbody>{rows}</tbody>
         </table>
         """
@@ -873,14 +734,14 @@ def lag_presentasjon_html(
 
   <div class="card"><div class="label">Drift / mnd</div><div class="value">{drift_mnd:,.0f} kr</div></div>
   <div class="card"><div class="label">Total investering</div><div class="value">{total_investering:,.0f} kr</div></div>
-  <div class="card"><div class="label">Brutto leie / mnd</div><div class="value">{brutto_leie_mnd:,.0f} kr</div></div>
+  <div class="card"><div class="label">Leie / mnd</div><div class="value">{leie:,.0f} kr</div></div>
 
-  <div class="card"><div class="label">Effektiv leie / mnd</div><div class="value">{eff_leie_mnd:,.0f} kr</div></div>
-  <div class="card"><div class="label">Ledighet / Forvaltning</div><div class="value">{ledighet_pct:.1f}% / {mgmt_pct:.1f}%</div></div>
-  <div class="card"><div class="label">Yield (brutto / netto)</div><div class="value">{(brutto_leie_mnd*12/total_investering*100 if total_investering else 0):.2f}% / {((eff_leie_mnd*12 - drift_mnd*12)/total_investering*100 if total_investering else 0):.2f}%</div></div>
+  <div class="card"><div class="label">Egenkapital</div><div class="value">{egenkapital:,.0f} kr</div></div>
+  <div class="card"><div class="label">Rente</div><div class="value">{rente:.2f} %</div></div>
+  <div class="card"><div class="label">Yield (brutto / netto)</div><div class="value">{(leie*12/total_investering*100 if total_investering else 0):.2f}% / {((leie*12 - drift_mnd*12)/total_investering*100 if total_investering else 0):.2f}%</div></div>
 
-  <div class="card"><div class="label">Antall {_safe(room_label)}</div><div class="value">{antall_rom}</div></div>
-  <div class="card"><div class="label">Snitt pr. {_safe(room_label)}</div><div class="value">{snitt_pr_rom:,.0f} kr</div></div>
+  <div class="card"><div class="label">Antall rom</div><div class="value">{antall_rom}</div></div>
+  <div class="card"><div class="label">Snitt pr. rom</div><div class="value">{snitt_pr_rom:,.0f} kr</div></div>
   <div class="card"><div class="label">Leie-kilde</div><div class="value"><span class="badge">{_safe(leie_kilde)}</span></div></div>
 </div>
 
@@ -904,7 +765,7 @@ def lag_presentasjon_html(
 <div class="spacer"></div>
 
 <div class="card">
-  <h2>{_safe(room_label.capitalize())} og leie</h2>
+  <h2>Rom og leie</h2>
   {rom_table if rom_table else "<p class='muted'>Ingen rom spesifisert.</p>"}
 </div>
 
@@ -916,16 +777,9 @@ def lag_presentasjon_html(
     {skatt_html if skatt_html else "<p class='muted'>Ingen beregning tilgjengelig.</p>"}
   </div>
   <div class="card">
-    <h2>Verdiutvikling</h2>
+    <h2>Verdiutvikling (2,5 % årlig)</h2>
     {verdi_html if verdi_html else "<p class='muted'>Ingen beregning tilgjengelig.</p>"}
   </div>
-</div>
-
-<div class="spacer"></div>
-
-<div class="card">
-  <h2>Årlig drift (før finans)</h2>
-  {annual_html if annual_html else "<p class='muted'>Ingen beregning tilgjengelig.</p>"}
 </div>
 
 <div class="spacer"></div>
@@ -962,10 +816,7 @@ rapport_bytes = lag_presentasjon_html(
     oppussing_total=int(oppussing_total),
     drift_mnd=int(drift_mnd_total),
     total_investering=int(total_investering),
-    brutto_leie_mnd=int(brutto_leie_mnd),
-    eff_leie_mnd=int(eff_leie_mnd),
-    ledighet_pct=float(st.session_state["persist"].get("ledighet_pct", 0.0)),
-    mgmt_pct=float(st.session_state["persist"].get("mgmt_pct", 0.0)),
+    leie=int(leie),
     rente=float(st.session_state["rente"]),
     løpetid=int(st.session_state["løpetid"]),
     avdragsfri=int(st.session_state["avdragsfri"]),
@@ -974,11 +825,8 @@ rapport_bytes = lag_presentasjon_html(
     egenkapital=int(st.session_state["egenkapital"]),
     antall_rom=int(st.session_state["persist"].get("antall_rom", 0)),
     rom_renter=st.session_state["persist"].get("rooms_leie", {}),
-    room_label=st.session_state["persist"].get("room_label","rom"),
     skatt=skatt,
     verdi_tabell=verdistigning,
-    annual_rows=annual_rows
-    if (annual_rows := annual_df.to_dict(orient="records")) else None,
 )
 
 st.markdown("---")
@@ -991,6 +839,140 @@ st.download_button(
     use_container_width=True,
 )
 st.caption("Åpne HTML-filen i nettleser → Skriv ut → Lagre som PDF. (Lenker og rå-URL bevares som klikkbare.)")
+
+# ========================= ONE PAGER (BANK) =========================
+def lag_onepager_html(
+    prosjekt_navn: str,
+    finn_url: str,
+    kjøpesum: int,
+    dokumentavgift: int,
+    oppussing_total: int,
+    total_investering: int,
+    egenkapital: int,
+    lån: int,
+    lånegrad: float,
+    brutto_leie_mnd: int,
+    eff_leie_mnd: int,
+    drift_mnd: int,
+    brutto_yield: float,
+    netto_yield: float,
+    rente: float,
+    løpetid: int,
+    avdragsfri: int,
+    lånetype: str,
+    eierform: str,
+    kpis_1: dict,
+    breakeven_mnd: int | None,
+    note: str
+) -> bytes:
+    """Returnerer HTML for en bankvennlig one-pager."""
+    safe_url = finn_url if (finn_url.startswith("http://") or finn_url.startswith("https://")) else ""
+    html = f"""
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8" />
+<title>{prosjekt_navn} – One Pager</title>
+<style>
+  body {{ font-family: Arial, sans-serif; margin: 36px; color:#111; }}
+  h1 {{ font-size: 26px; margin-bottom: 0; }}
+  h2 {{ font-size: 18px; margin-top: 20px; }}
+  table {{ border-collapse: collapse; width: 100%; margin-top: 6px; }}
+  th, td {{ text-align: left; padding: 6px; border-bottom: 1px solid #ddd; }}
+  th {{ background:#f7f7f7; }}
+  .muted {{ color:#666; font-size: 12px; }}
+  .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
+  @media print {{
+    a[href]::after {{ content:" (" attr(href) ")"; font-size:11px; color:#555; }}
+  }}
+</style>
+</head>
+<body>
+
+<h1>{prosjekt_navn}</h1>
+<p class="muted">One Pager – for bank / finansiering</p>
+{"<p><a href='" + safe_url + "' target='_blank'>🔗 FINN-annonsen</a></p>" if safe_url else ""}
+
+<div class="grid">
+<div>
+<h2>Grunnlag</h2>
+<table>
+<tr><th>Kjøpesum</th><td>{kjøpesum:,.0f} kr</td></tr>
+<tr><th>Dokumentavgift</th><td>{dokumentavgift:,.0f} kr</td></tr>
+<tr><th>Oppussing</th><td>{oppussing_total:,.0f} kr</td></tr>
+<tr><th>Total investering</th><td>{total_investering:,.0f} kr</td></tr>
+<tr><th>Egenkapital</th><td>{egenkapital:,.0f} kr</td></tr>
+<tr><th>Lånebeløp</th><td>{lån:,.0f} kr</td></tr>
+<tr><th>Lånegrad (LTV)</th><td>{lånegrad:.1f} %</td></tr>
+</table>
+</div>
+
+<div>
+<h2>Leie & Yield</h2>
+<table>
+<tr><th>Brutto leie</th><td>{brutto_leie_mnd:,.0f} kr/mnd</td></tr>
+<tr><th>Effektiv leie</th><td>{eff_leie_mnd:,.0f} kr/mnd</td></tr>
+<tr><th>Driftskostnader</th><td>{drift_mnd:,.0f} kr/mnd</td></tr>
+<tr><th>Yield brutto</th><td>{brutto_yield:.2f} %</td></tr>
+<tr><th>Yield netto</th><td>{netto_yield:.2f} %</td></tr>
+</table>
+</div>
+</div>
+
+<h2>Lån</h2>
+<table>
+<tr><th>Rente</th><td>{rente:.2f} %</td></tr>
+<tr><th>Løpetid</th><td>{løpetid} år</td></tr>
+<tr><th>Avdragsfri</th><td>{avdragsfri} år</td></tr>
+<tr><th>Lånetype</th><td>{lånetype}</td></tr>
+<tr><th>Eierform</th><td>{eierform}</td></tr>
+<tr><th>Termin 1. mnd</th><td>{kpis_1['termin']:,.0f} kr</td></tr>
+<tr><th>Netto 1. mnd</th><td>{kpis_1['netto']:,.0f} kr</td></tr>
+<tr><th>Break-even</th><td>{breakeven_mnd if breakeven_mnd else '—'} mnd</td></tr>
+</table>
+
+{"<h2>Notater</h2><p>" + note.replace("\\n","<br>") + "</p>" if note else ""}
+
+</body>
+</html>
+"""
+    return html.encode("utf-8")
+
+# One-pager bytes
+brutto_leie_mnd = leie
+eff_leie_mnd = leie  # eventuelt juster for ledighet/forvaltning senere
+onepager_bytes = lag_onepager_html(
+    prosjekt_navn=proj_navn,
+    finn_url=finn_url,
+    kjøpesum=int(kjøpesum),
+    dokumentavgift=int(dokumentavgift),
+    oppussing_total=int(oppussing_total),
+    total_investering=int(total_investering),
+    egenkapital=int(st.session_state["egenkapital"]),
+    lån=int(st.session_state["lån"]),
+    lånegrad=(st.session_state["lån"] / total_investering * 100) if total_investering else 0.0,
+    brutto_leie_mnd=int(brutto_leie_mnd),
+    eff_leie_mnd=int(eff_leie_mnd),
+    drift_mnd=int(drift_mnd_total),
+    brutto_yield=(brutto_leie_mnd*12/total_investering*100 if total_investering else 0.0),
+    netto_yield=((eff_leie_mnd*12 - drift_mnd_total*12)/total_investering*100 if total_investering else 0.0),
+    rente=float(st.session_state["rente"]),
+    løpetid=int(st.session_state["løpetid"]),
+    avdragsfri=int(st.session_state["avdragsfri"]),
+    lånetype=st.session_state["lånetype"],
+    eierform=st.session_state["eierform"],
+    kpis_1=kpis_1,
+    breakeven_mnd=breakeven_mnd,
+    note=note
+)
+
+st.download_button(
+    "📑 Last ned One Pager (for bank)",
+    data=onepager_bytes,
+    file_name="onepager.html",
+    mime="text/html",
+    use_container_width=True,
+)
 
 # ========================= Autosave persist =========================
 if st.session_state["_dirty"]:
